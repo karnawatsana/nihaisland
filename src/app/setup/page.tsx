@@ -109,6 +109,21 @@ function Editor({ code, onLogout }: { code: string; onLogout: () => void }) {
       {tab === "cast" && (
         <>
           <p className="mt-4 max-w-3xl rounded-xl bg-black/25 px-4 py-3 text-sm">Every field is editable. Anything in <b>[BRACKETS]</b> is a placeholder and will show on the TV as-is. Order is fixed: seven islanders, then Niha as the Birthday Bombshell. Photos are resized in your browser before upload.</p>
+          <label className="mt-4 inline-block cursor-pointer rounded-xl bg-gradient-to-br from-hot to-[#d4106f] px-5 py-3 text-sm font-bold">
+            ⚡ Bulk import photos (name each file after the islander, e.g. <code>sana.png</code>)
+            <input type="file" accept="image/*" multiple className="hidden" aria-label="Bulk import photos" onChange={async (e) => {
+              const files = [...(e.target.files ?? [])]; e.target.value = "";
+              const next = [...cast]; const hit: string[] = []; const miss: string[] = [];
+              for (const f of files) {
+                const base = f.name.toLowerCase().replace(/\.[a-z0-9]+$/, "");
+                const i = next.findIndex((c) => { const n = c.firstName.toLowerCase().replace(/[^a-z]/g, ""); return n && base.startsWith(n); });
+                if (i < 0) { miss.push(f.name); continue; }
+                const url = await fileToDataUrl(f); next[i] = { ...next[i], photo: url, photoCutout: await hasTransparency(url) }; hit.push(next[i].firstName);
+              }
+              setCast(next); setDirty(hit.length > 0 || dirty);
+              setMsg({ ok: miss.length === 0, t: `Matched: ${hit.join(", ") || "none"}.${miss.length ? ` No islander found for: ${miss.join(", ")}.` : ""} Press Save to push to the TV.` });
+            }} />
+          </label>
           <div className="mt-4 grid gap-4 lg:grid-cols-2">{cast.map((c, i) => <CastCard key={c.id} c={c} i={i} onChange={(n) => edit(i, n)} />)}</div>
           <div className="mt-6 flex gap-6 text-sm"><button className="underline" onClick={() => { if (confirm("Reload the written intros? Photos and edits on screen are replaced (unsaved until you press Save).")) { setCast(partyCast()); setDirty(true); } }}>Reload written intros</button><button className="underline" onClick={() => { if (confirm("Reset all eight profiles to blank placeholders?")) { setCast(placeholderCast()); setDirty(true); } }}>Reset to blank placeholders</button></div>
         </>
