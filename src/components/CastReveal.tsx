@@ -45,7 +45,7 @@ export function Portrait({ islander, w, h, fallback, gold = false }: { islander:
       <div style={{ position: "absolute", inset: 0, borderRadius: `${w / 2}px ${w / 2}px 28px 28px`, overflow: "hidden", background: `linear-gradient(180deg,${islander.accent}55,#3a0b5288)` }}>
         {src ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={src} alt={islander.firstName} draggable={false} style={islander.photoCutout && islander.photo ? { width: "100%", height: "100%", objectFit: "contain", objectPosition: "50% 100%", filter: "drop-shadow(0 0 3px rgba(255,255,255,.5)) drop-shadow(0 10px 24px rgba(0,20,40,.45))" } : { width: "100%", height: "100%", objectFit: "cover", objectPosition: "50% 22%" }} />
+          <img src={src} alt={islander.firstName} draggable={false} style={!islander.photo ? { width: "100%", height: "100%", objectFit: "cover", objectPosition: "50% 0%", filter: "drop-shadow(0 10px 24px rgba(0,20,40,.45))" } : islander.photoCutout ? { width: "100%", height: "100%", objectFit: "contain", objectPosition: "50% 100%", filter: "drop-shadow(0 0 3px rgba(255,255,255,.5)) drop-shadow(0 10px 24px rgba(0,20,40,.45))" } : { width: "100%", height: "100%", objectFit: "cover", objectPosition: "50% 22%" }} />
         ) : (
           <Silhouette color={islander.accent} initial={islander.firstName.replace(/[^A-Za-z]/g, "").charAt(0).toUpperCase() || "?"} label={isPh(islander.firstName) ? "Photo placeholder" : "No photo yet"} />
         )}
