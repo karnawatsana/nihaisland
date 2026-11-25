@@ -128,7 +128,7 @@ function Editor({ code, onLogout }: { code: string; onLogout: () => void }) {
               }} />
             </label>
             {poster.portrait && <p className="mt-2 text-xs text-white/80">{poster.cutout ? "✓ Transparent edges detected — used as a cut-out." : "No transparency detected — using the soft-vignette fallback."} <button className="underline" onClick={() => editPoster({ portrait: null, cutout: false })}>Remove</button></p>}
-            {([["x", "Move left / right", -600, 600, 1], ["y", "Move up / down", -300, 400, 1], ["scale", "Size", 0.4, 1.8, 0.01]] as const).map(([k, l, mn, mx, st]) => (
+            {([["x", "Move left / right", -600, 600, 1], ["y", "Move up / down", -300, 700, 1], ["scale", "Size", 0.4, 1.8, 0.01]] as const).map(([k, l, mn, mx, st]) => (
               <div key={k}><label className={label}>{l}: {poster[k]}</label><input type="range" className="w-full accent-[#ff2d95]" min={mn} max={mx} step={st} value={poster[k]} aria-label={l} onChange={(e) => editPoster({ [k]: +e.target.value })} /></div>
             ))}
             <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={poster.flip} onChange={(e) => editPoster({ flip: e.target.checked })} /> Mirror image</label>
