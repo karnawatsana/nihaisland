@@ -42,6 +42,7 @@ function Scene({ data, onEnter, setReveal }: { data: RoomData; onEnter: () => vo
   switch (step.kind) {
     case "standby": return <Standby code={data.code} demo={demo} />;
     case "poster": return <Poster config={poster} introKey={state.introKey} interactive onEnter={onEnter} demo={demo} />;
+    case "host": return poster.host ? <CastReveal islander={poster.host} index={1} total={1} introKey={state.introKey} badge="★ YOUR HOST ★" /> : <Standby code={data.code} demo={demo} />;
     case "cast": return <CastReveal islander={cast[step.index]} index={step.index} total={CAST_SIZE - 1} introKey={state.introKey} />;
     case "bombshell": return <Bombshell islander={cast[CAST_SIZE - 1]} introKey={state.introKey} fallbackPhoto={poster.portrait} onReveal={setReveal} />;
     case "round": return <RoundScreen id={step.id} introKey={state.introKey} />;
@@ -71,7 +72,7 @@ export function Presentation({ code, contained = false }: { code: string; contai
     if (prev.current && prev.current !== sceneKey) {
       const k = STEPS[data.state.step].kind;
       if (k === "poster") sfx.opening();
-      else if (k === "cast") sfx.reveal();
+      else if (k === "cast" || k === "host") sfx.reveal();
       else if (k === "bombshell") sfx.siren();
       else if (k === "hotseat") sfx.siren();
       else if (k === "finale") sfx.fanfare();

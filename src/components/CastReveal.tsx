@@ -55,7 +55,7 @@ export function Portrait({ islander, w, h, fallback, gold = false }: { islander:
   );
 }
 
-export function CastReveal({ islander, index, total, introKey }: { islander: Islander; index: number; total: number; introKey: number }) {
+export function CastReveal({ islander, index, total, introKey, badge }: { islander: Islander; index: number; total: number; introKey: number; badge?: string }) {
   const right = index % 2 === 0;
   const ph = (t: string) => (isPh(t) ? { fontStyle: "italic" as const, opacity: 0.7 } : {});
   return (
@@ -71,7 +71,7 @@ export function CastReveal({ islander, index, total, introKey }: { islander: Isl
       <div style={{ position: "absolute", top: 92, [right ? "left" : "right"]: 120, width: 1000 }}>
         <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5, duration: 0.9 }} className="flex items-center gap-4"
           style={{ fontSize: 26, fontWeight: 700, letterSpacing: "0.4em", textShadow: "0 2px 12px rgba(0,60,90,.6)" }}>
-          <span style={{ background: islander.accent, borderRadius: 99, padding: "6px 22px", letterSpacing: "0.25em", fontSize: 22 }}>ISLANDER {String(index + 1).padStart(2, "0")}/{String(total).padStart(2, "0")}</span>
+          <span style={{ background: islander.accent, borderRadius: 99, padding: "6px 22px", letterSpacing: "0.25em", fontSize: 22 }}>{badge ?? `ISLANDER ${String(index + 1).padStart(2, "0")}/${String(total).padStart(2, "0")}`}</span>
           <span style={{ opacity: 0.9 }}>NIHA ISLAND</span>
         </motion.div>
         <motion.div initial={{ opacity: 0, x: right ? -120 : 120, filter: "blur(16px)" }} animate={{ opacity: 1, x: 0, filter: "blur(0px)" }} transition={{ delay: 0.7, duration: 1.1, ease: [0.16, 1, 0.3, 1] }}

@@ -18,11 +18,11 @@ export function reduce(s: PresState, c: Command, now = Date.now()): PresState {
     case "goto": return go(c.step);
     case "openPoster": return go(STEP.poster);
     case "replayOpening": return { ...go(STEP.poster) };
-    case "startCast": return go(STEP.firstCast);
+    case "startCast": return go(STEP.host);
     case "bombshell": return go(STEP.bombshell);
     case "restart": return go(STEP.poster);
     case "standby": return go(STEP.standby);
-    case "enter": return s.step === STEP.poster ? go(STEP.firstCast) : s;
+    case "enter": return s.step === STEP.poster ? go(STEP.host) : s;
     case "togglePause": return { ...s, paused: !s.paused, changedAt: now };
     case "toggleMute": return { ...s, muted: !s.muted, changedAt: now };
   }

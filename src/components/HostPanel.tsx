@@ -35,7 +35,7 @@ export function HostPanel({ code, onLogout, compact = false }: { code: string; o
 
       <div className="mt-4 rounded-3xl border border-white/30 bg-[#04283e]/60 p-4 backdrop-blur">
         <div className="text-[11px] font-semibold uppercase tracking-[.3em] text-gold">Now on TV{state.paused ? " · PAUSED" : ""}{state.muted ? " · MUTED" : ""}</div>
-        <div className="mt-1 text-xl font-bold leading-snug" data-testid="now-showing">{stepLabel(state.step, cast)}</div>
+        <div className="mt-1 text-xl font-bold leading-snug" data-testid="now-showing">{stepLabel(state.step, cast, data.poster.host?.firstName)}</div>
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/15"><div className="h-full rounded-full bg-gradient-to-r from-hot to-gold transition-all" style={{ width: `${pct}%` }} /></div>
         <div className="mt-1 text-right text-xs text-white/70">Step {state.step + 1} / {STEPS.length}</div>
       </div>
@@ -60,8 +60,9 @@ export function HostPanel({ code, onLogout, compact = false }: { code: string; o
 
       <details className="mt-5 rounded-2xl border border-white/25 bg-white/10 p-3" open={!compact}>
         <summary className="cursor-pointer text-sm font-bold uppercase tracking-[.2em]">Jump to…</summary>
-        <div className="mt-3 text-[11px] font-semibold uppercase tracking-[.25em] text-white/70">Islanders</div>
+        <div className="mt-3 text-[11px] font-semibold uppercase tracking-[.25em] text-white/70">Host &amp; islanders</div>
         <div className="mt-2 grid grid-cols-2 gap-2">
+          <button onClick={() => { buzz(); run({ type: "goto", step: STEP.host }); }} className={`col-span-2 truncate rounded-xl px-3 py-2 text-left text-sm font-semibold ${step.kind === "host" ? "bg-hot" : "bg-gradient-to-r from-[#ffb02e]/60 to-[#ff7a2e]/60"}`}>🎤 Host · {data.poster.host?.firstName ?? "—"}</button>
           {cast.slice(0, CAST_SIZE - 1).map((c, i) => (
             <button key={c.id} onClick={() => { buzz(); run({ type: "goto", step: STEP.firstCast + i }); }} className={`truncate rounded-xl px-3 py-2 text-left text-sm font-semibold ${state.step === STEP.firstCast + i ? "bg-hot" : "bg-white/15"}`}>
               <span className="mr-1 opacity-70">{i + 1}.</span>{c.firstName}

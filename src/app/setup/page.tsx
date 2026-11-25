@@ -8,7 +8,7 @@ import { Stage } from "@/components/Stage";
 import { Silhouette } from "@/components/Silhouette";
 import { createRoomApi, getToken, realtimeMode, useRoom } from "@/lib/useRoom";
 import { fileToDataUrl } from "@/lib/image";
-import { partyCast, placeholderCast } from "@/lib/cast";
+import { partyCast, partyHost, placeholderCast } from "@/lib/cast";
 import { CAST_SIZE } from "@/lib/sequence";
 import type { Islander, PosterConfig } from "@/lib/types";
 
@@ -25,13 +25,13 @@ async function hasTransparency(dataUrl: string): Promise<boolean> {
   return t / n > 0.5;
 }
 
-function CastCard({ c, i, onChange }: { c: Islander; i: number; onChange: (c: Islander) => void }) {
+function CastCard({ c, i, onChange, title }: { c: Islander; i: number; onChange: (c: Islander) => void; title?: string }) {
   const [busy, setBusy] = useState(false);
   const birthday = i === CAST_SIZE - 1;
   return (
     <div className={`rounded-3xl border p-4 backdrop-blur ${birthday ? "border-gold bg-gradient-to-br from-[#ff2d95]/30 to-[#ffb02e]/25" : "border-white/30 bg-[#04283e]/55"}`}>
       <div className="flex items-center justify-between">
-        <div className="text-sm font-extrabold uppercase tracking-[.2em]">{birthday ? "★ Birthday Bombshell (introduced last)" : `Islander ${i + 1}`}</div>
+        <div className="text-sm font-extrabold uppercase tracking-[.2em]">{title ?? (birthday ? "★ Birthday Bombshell (introduced last)" : `Islander ${i + 1}`)}</div>
         <input type="color" value={c.accent} onChange={(e) => onChange({ ...c, accent: e.target.value })} aria-label="Accent colour" className="h-8 w-10 cursor-pointer rounded bg-transparent" />
       </div>
       <div className="mt-3 flex gap-4">
@@ -108,24 +108,28 @@ function Editor({ code, onLogout }: { code: string; onLogout: () => void }) {
 
       {tab === "cast" && (
         <>
-          <p className="mt-4 max-w-3xl rounded-xl bg-black/25 px-4 py-3 text-sm">Every field is editable. Anything in <b>[BRACKETS]</b> is a placeholder and will show on the TV as-is. Order is fixed: seven islanders, then Niha as the Birthday Bombshell. Photos are resized in your browser before upload.</p>
+          <p className="mt-4 max-w-3xl rounded-xl bg-black/25 px-4 py-3 text-sm">Every field is editable. Anything in <b>[BRACKETS]</b> is a placeholder and will show on the TV as-is. Order is fixed: the host first, then seven islanders, then Niha as the Birthday Bombshell. Photos are resized in your browser before upload.</p>
           <label className="mt-4 inline-block cursor-pointer rounded-xl bg-gradient-to-br from-hot to-[#d4106f] px-5 py-3 text-sm font-bold">
             ⚡ Bulk import photos (name each file after the islander, e.g. <code>sana.png</code>)
             <input type="file" accept="image/*" multiple className="hidden" aria-label="Bulk import photos" onChange={async (e) => {
               const files = [...(e.target.files ?? [])]; e.target.value = "";
-              const next = [...cast]; const hit: string[] = []; const miss: string[] = [];
+              const next = [...cast]; const hit: string[] = []; const miss: string[] = []; let hostPhoto: Partial<Islander> | null = null;
               for (const f of files) {
                 const base = f.name.toLowerCase().replace(/\.[a-z0-9]+$/, "");
-                const i = next.findIndex((c) => { const n = c.firstName.toLowerCase().replace(/[^a-z]/g, ""); return n && base.startsWith(n); });
+                const m = (c: Islander) => { const n = c.firstName.toLowerCase().replace(/[^a-z]/g, ""); return !!n && base.startsWith(n); };
+                const url = f.size ? await fileToDataUrl(f) : "";
+                if (poster.host && m(poster.host)) { hostPhoto = { photo: url, photoCutout: await hasTransparency(url) }; hit.push(poster.host.firstName); continue; }
+                const i = next.findIndex(m);
                 if (i < 0) { miss.push(f.name); continue; }
-                const url = await fileToDataUrl(f); next[i] = { ...next[i], photo: url, photoCutout: await hasTransparency(url) }; hit.push(next[i].firstName);
+                next[i] = { ...next[i], photo: url, photoCutout: await hasTransparency(url) }; hit.push(next[i].firstName);
               }
-              setCast(next); setDirty(hit.length > 0 || dirty);
+              setCast(next); if (hostPhoto && poster.host) setPoster({ ...poster, host: { ...poster.host, ...hostPhoto } }); setDirty(hit.length > 0 || dirty);
               setMsg({ ok: miss.length === 0, t: `Matched: ${hit.join(", ") || "none"}.${miss.length ? ` No islander found for: ${miss.join(", ")}.` : ""} Press Save to push to the TV.` });
             }} />
           </label>
+          <div className="mt-4">{poster.host ? <CastCard c={poster.host} i={-1} title="🎤 Host (introduced first)" onChange={(h) => editPoster({ host: h })} /> : <button className="rounded-xl bg-white/20 px-4 py-3 text-sm font-bold" onClick={() => editPoster({ host: partyHost() })}>+ Add a host intro card</button>}</div>
           <div className="mt-4 grid gap-4 lg:grid-cols-2">{cast.map((c, i) => <CastCard key={c.id} c={c} i={i} onChange={(n) => edit(i, n)} />)}</div>
-          <div className="mt-6 flex gap-6 text-sm"><button className="underline" onClick={() => { if (confirm("Reload the written intros? Photos and edits on screen are replaced (unsaved until you press Save).")) { setCast(partyCast()); setDirty(true); } }}>Reload written intros</button><button className="underline" onClick={() => { if (confirm("Reset all eight profiles to blank placeholders?")) { setCast(placeholderCast()); setDirty(true); } }}>Reset to blank placeholders</button></div>
+          <div className="mt-6 flex gap-6 text-sm"><button className="underline" onClick={() => { if (confirm("Reload the written intros? Photos and edits on screen are replaced (unsaved until you press Save).")) { setCast(partyCast()); editPoster({ host: partyHost() }); } }}>Reload written intros</button><button className="underline" onClick={() => { if (confirm("Reset all eight profiles to blank placeholders?")) { setCast(placeholderCast()); setDirty(true); } }}>Reset to blank placeholders</button></div>
         </>
       )}
 

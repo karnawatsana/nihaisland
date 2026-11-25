@@ -54,4 +54,14 @@ export function demoCast(): Islander[] {
   return base.map((b, i) => ({ ...b, id: `d${i + 1}`, accent: ACCENTS[i], photo: null }));
 }
 
-export const defaultPoster = (): PosterConfig => ({ portrait: null, x: 0, y: 0, scale: 1, flip: false });
+export const partyHost = (): Islander => ({
+  id: "host", firstName: "Abi", nickname: "Dr. Chaos", accent: "#ffb02e", photo: null,
+  bio: "Aries, doctor, class clown, and the group's chaos coordinator. Has a wild story for every situation and a medical degree for the consequences. Tonight's host: trust the doctor, not the plan.",
+  stats: stats([98, 70, 85, 55]), quote: "Trust me, I'm a doctor. (Please don't ask about the story.)",
+});
+export const demoHost = (): Islander => ({
+  id: "host", firstName: "Dex", nickname: "Your Fictional Host", accent: "#ffb02e", photo: null,
+  bio: "Demo-only host with a clipboard, a microphone and zero crowd control. Promises the show starts 'in five minutes' since 2019.",
+  stats: stats([85, 80, 70, 40]), quote: "Welcome to the villa! Please ignore the smoke.",
+});
+export const defaultPoster = (host?: Islander): PosterConfig => ({ portrait: null, x: 0, y: 0, scale: 1, flip: false, host });

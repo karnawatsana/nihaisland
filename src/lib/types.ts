@@ -17,6 +17,7 @@ export interface PosterConfig {
   y: number;
   scale: number;  // 1 = default height
   flip: boolean;
+  host?: Islander; // the host intro card (stored alongside the poster settings)
   cutout?: boolean; // true when the portrait has transparent edges (background removed)
 }
 export interface PresState {

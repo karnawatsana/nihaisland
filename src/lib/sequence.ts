@@ -6,7 +6,7 @@ import type { Islander } from "./types";
  * (registry by round id) — the host dashboard and sync layer need no changes.
  */
 export type Step =
-  | { kind: "standby" } | { kind: "poster" }
+  | { kind: "standby" } | { kind: "poster" } | { kind: "host" }
   | { kind: "cast"; index: number }
   | { kind: "bombshell" }
   | { kind: "round"; id: RoundId }
@@ -26,6 +26,7 @@ export const CAST_SIZE = 8; // 7 islanders + birthday bombshell (last)
 export const STEPS: Step[] = [
   { kind: "standby" },
   { kind: "poster" },
+  { kind: "host" },
   ...Array.from({ length: CAST_SIZE - 1 }, (_, i) => ({ kind: "cast", index: i }) as Step),
   { kind: "bombshell" },
   ...ROUNDS.map((r) => ({ kind: "round", id: r.id }) as Step),
@@ -36,17 +37,19 @@ export const STEPS: Step[] = [
 export const STEP = {
   standby: 0,
   poster: 1,
-  firstCast: 2,
-  bombshell: 2 + (CAST_SIZE - 1),
+  host: 2,
+  firstCast: 3,
+  bombshell: 3 + (CAST_SIZE - 1),
   lastStep: STEPS.length - 1,
 };
 
-export function stepLabel(step: number, cast: Islander[]): string {
+export function stepLabel(step: number, cast: Islander[], hostName?: string): string {
   const s = STEPS[step];
   if (!s) return "—";
   switch (s.kind) {
     case "standby": return "Standby screen";
     case "poster": return "Title poster";
+    case "host": return `Host intro · ${hostName ?? ""}`;
     case "cast": return `Islander ${s.index + 1}/${CAST_SIZE - 1} · ${cast[s.index]?.firstName ?? ""}`;
     case "bombshell": return `Birthday Bombshell · ${cast[CAST_SIZE - 1]?.firstName ?? ""}`;
     case "round": { const r = ROUNDS.find((x) => x.id === s.id)!; return `Round ${r.n} · ${r.title}`; }
