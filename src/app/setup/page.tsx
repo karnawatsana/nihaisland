@@ -37,16 +37,16 @@ function CastCard({ c, i, onChange }: { c: Islander; i: number; onChange: (c: Is
       <div className="mt-3 flex gap-4">
         <div className="w-28 shrink-0">
           <div className="relative h-40 w-28 overflow-hidden rounded-t-[56px] rounded-b-xl border-2 border-white/60 bg-black/20">
-            {c.photo ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={c.photo} alt="" className="h-full w-full object-cover" style={{ objectPosition: "50% 22%" }} /> : <Silhouette color={c.accent} />}
+            {c.photo ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={c.photo} alt="" className={`h-full w-full ${c.photoCutout ? "object-contain" : "object-cover"}`} style={{ objectPosition: c.photoCutout ? "50% 100%" : "50% 22%" }} /> : <Silhouette color={c.accent} />}
           </div>
           <label className="mt-2 block cursor-pointer rounded-lg bg-white/20 px-2 py-2 text-center text-xs font-bold hover:bg-white/30">
             {busy ? "Processing…" : c.photo ? "Replace photo" : "Upload photo"}
             <input type="file" accept="image/*" className="hidden" aria-label={`Upload photo for ${c.firstName}`} onChange={async (e) => {
               const f = e.target.files?.[0]; if (!f) return; setBusy(true);
-              try { onChange({ ...c, photo: await fileToDataUrl(f) }); } finally { setBusy(false); e.target.value = ""; }
+              try { const url = await fileToDataUrl(f); onChange({ ...c, photo: url, photoCutout: await hasTransparency(url) }); } finally { setBusy(false); e.target.value = ""; }
             }} />
           </label>
-          {c.photo && <button className="mt-1 w-full text-xs underline" onClick={() => onChange({ ...c, photo: null })}>Remove</button>}
+          {c.photo && <button className="mt-1 w-full text-xs underline" onClick={() => onChange({ ...c, photo: null, photoCutout: false })}>Remove</button>}
         </div>
         <div className="min-w-0 flex-1">
           <label className={label} style={{ marginTop: 0 }}>First name</label>

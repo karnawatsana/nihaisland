@@ -18,7 +18,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ code: st
     id: str(c.id, 20) || `c${i}`,
     firstName: str(c.firstName, 28), nickname: str(c.nickname, 48), bio: str(c.bio, 320), quote: str(c.quote, 160),
     accent: /^#[0-9a-f]{6}$/i.test(c.accent) ? c.accent : "#ff2d95",
-    photo: img(c.photo), birthday: i === CAST_SIZE - 1,
+    photo: img(c.photo), photoCutout: !!c.photoCutout, birthday: i === CAST_SIZE - 1,
     stats: (Array.isArray(c.stats) ? c.stats : []).slice(0, 4).map((s: any) => ({
       label: str(s.label, 28), value: Math.max(0, Math.min(100, Math.round(Number(s.value) || 0))),
     })),

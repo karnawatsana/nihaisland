@@ -7,6 +7,7 @@ export interface Islander {
   stats: Stat[];
   quote: string;
   photo: string | null;
+  photoCutout?: boolean; // transparent background → shown bottom-anchored on the colour backdrop
   accent: string;
   birthday?: boolean;
 }

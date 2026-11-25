@@ -45,7 +45,7 @@ export function Portrait({ islander, w, h, fallback, gold = false }: { islander:
       <div style={{ position: "absolute", inset: 0, borderRadius: `${w / 2}px ${w / 2}px 28px 28px`, overflow: "hidden", background: `linear-gradient(180deg,${islander.accent}55,#3a0b5288)` }}>
         {src ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={src} alt={islander.firstName} draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "50% 22%" }} />
+          <img src={src} alt={islander.firstName} draggable={false} style={islander.photoCutout && islander.photo ? { width: "100%", height: "100%", objectFit: "contain", objectPosition: "50% 100%", filter: "drop-shadow(0 0 3px rgba(255,255,255,.5)) drop-shadow(0 10px 24px rgba(0,20,40,.45))" } : { width: "100%", height: "100%", objectFit: "cover", objectPosition: "50% 22%" }} />
         ) : (
           <Silhouette color={islander.accent} initial={islander.firstName.replace(/[^A-Za-z]/g, "").charAt(0).toUpperCase() || "?"} label={isPh(islander.firstName) ? "Photo placeholder" : "No photo yet"} />
         )}
@@ -83,12 +83,12 @@ export function CastReveal({ islander, index, total, introKey }: { islander: Isl
           “{islander.nickname.replace(/^"|"$/g, "")}”
         </motion.div>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.4, duration: 1 }}
-          style={{ marginTop: 26, fontSize: 36, lineHeight: 1.32, fontWeight: 500, maxWidth: 930, color: "rgba(255,255,255,.96)", textShadow: "0 2px 14px rgba(0,40,70,.7)", ...ph(islander.bio) }}>
+          style={{ marginTop: 22, fontSize: islander.bio.length > 175 ? 32 : 36, lineHeight: 1.3, fontWeight: 500, maxWidth: 930, color: "rgba(255,255,255,.96)", textShadow: "0 2px 14px rgba(0,40,70,.7)", ...ph(islander.bio) }}>
           {islander.bio}
         </motion.p>
-        <div style={{ marginTop: 40 }}><Stats islander={islander} /></div>
+        <div style={{ marginTop: 32 }}><Stats islander={islander} /></div>
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2.6, duration: 1 }} className="glass"
-          style={{ marginTop: 40, borderRadius: 28, padding: "24px 36px", maxWidth: 930, display: "flex", gap: 20, alignItems: "flex-start", background: "rgba(3,40,66,.45)" }}>
+          style={{ marginTop: 30, borderRadius: 28, padding: "20px 34px", maxWidth: 930, display: "flex", gap: 20, alignItems: "flex-start", background: "rgba(3,40,66,.45)" }}>
           <span className="font-serif" style={{ fontSize: 96, lineHeight: 0.7, color: islander.accent, fontWeight: 700 }}>“</span>
           <span style={{ fontSize: 36, fontWeight: 600, fontStyle: "italic", lineHeight: 1.25, textShadow: "0 2px 10px rgba(0,30,50,.5)", ...ph(islander.quote) }}>{islander.quote}</span>
         </motion.div>
