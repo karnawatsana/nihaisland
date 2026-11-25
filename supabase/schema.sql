@@ -15,3 +15,6 @@ create table if not exists public.rooms (
 -- Only the server (service-role key) touches this table. Browsers get NO direct access.
 alter table public.rooms enable row level security;
 -- (intentionally no policies)
+
+-- Newer Supabase projects don't auto-grant new tables to API roles; the server (service_role) needs this:
+grant all on public.rooms to service_role;

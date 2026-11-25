@@ -14,7 +14,7 @@ Open `/demo` → LAUNCH DEMO. For the real party: `/setup` → create room + PIN
 Without Supabase, sync runs through the Next server (SSE push + polling). This works across devices on the same network, but state lives in server memory and is lost on restart. **It does not work on Vercel** (serverless instances don't share memory) — use Supabase there.
 
 ## Deploy on Vercel + Supabase
-1. Create a Supabase project. SQL Editor → run `supabase/schema.sql`.
+1. Create a Supabase project. SQL Editor → run `supabase/schema.sql` (includes the `grant … to service_role` line newer projects need).
 2. Project Settings → API: copy the **Project URL**, **anon key**, **service_role key**.
 3. Push this repo to GitHub, import it in Vercel, and add env vars (see `.env.example`):
    - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
