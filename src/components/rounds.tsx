@@ -51,7 +51,7 @@ export function FinaleScreen({ introKey }: { introKey: number }) {
       <Sparkles count={60} seed={31} />
       <div className="stage-layer flex flex-col items-center justify-center text-center">
         <div style={{ fontSize: 38, fontWeight: 700, letterSpacing: "0.6em", textShadow: "0 2px 14px rgba(0,50,80,.7)" }}>NIHA ISLAND</div>
-        <motion.div initial={{ opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 1.2 }} className="gold-text" style={{ fontSize: 200, fontWeight: 800, lineHeight: 0.95, letterSpacing: "-0.04em", marginTop: 20, filter: "drop-shadow(0 8px 0 rgba(160,0,90,.5))" }}>birthday finale</motion.div>
+        <motion.div initial={{ opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 1.2 }} className="gold-text" style={{ fontSize: 200, fontWeight: 800, lineHeight: 0.95, letterSpacing: "-0.04em", marginTop: 20 }}>birthday finale</motion.div>
         <Badge>PLACEHOLDER · ARRIVES IN PHASE 2</Badge>
       </div>
     </div>
