@@ -23,6 +23,22 @@ export function placeholderCast(): Islander[] {
   });
 }
 
+
+/** The real party cast: alphabetical, birthday girl (Niha) always last. Photos are uploaded in /setup. */
+export function partyCast(): Islander[] {
+  const rows: Omit<Islander, "id" | "accent" | "photo">[] = [
+    { firstName: "Anvu", nickname: "The Lost Little Muse", bio: "Scorpio, artist, and the baby of the group. Can paint a masterpiece but not find the bathroom in a rental. Everyone has adopted her; nobody knows where she currently is.", stats: stats([70, 75, 85, 35]), quote: "I'm not lost, I'm exploring. With no map. And a lot of feelings." },
+    { firstName: "Malu", nickname: "Little Sis, Big Bite", bio: "A Virgo who is somehow both the chillest and the most savage person here. Fun little-sister energy until you say something dumb, then it's a roast with a smile.", stats: stats([55, 30, 88, 78]), quote: "I'm super relaxed. Anyway, here's why you're wrong." },
+    { firstName: "Riya", nickname: "The Brainy Baby Sis", bio: "Smart enough to win every argument, sweet enough to apologize for it. Will check that you've eaten, hydrated, and slept, then quietly out-think you at game night.", stats: stats([40, 25, 95, 80]), quote: "I'm not competitive. I just like winning. Also, did you drink water?" },
+    { firstName: "Salena", nickname: "CEO of the Villa", bio: "Born December 17th: a Sagittarius, a boss woman, and an athlete. Treats every group activity like a championship and every group chat like a board meeting.", stats: stats([60, 45, 90, 85]), quote: "I don't do drama. I do cardio. And then I win." },
+    { firstName: "Sana", nickname: "The Receipts Keeper", bio: "Virgo with an organized everything and a memory that never forgets: your birthday, your coffee order, and exactly what you said in 2019. Sensitive, maternal, and will absolutely bring snacks.", stats: stats([45, 20, 95, 75]), quote: "I'm not holding a grudge. I just remember everything. Vividly." },
+    { firstName: "Sankhe", nickname: "Professor Actually", bio: "Aquarius, engineer, and holder of a PhD. Will explain why your idea won't work, with a diagram. Most likely to correct the trivia host and, annoyingly, be right.", stats: stats([25, 40, 80, 90]), quote: "Well, actually…" },
+    { firstName: "Shaun", nickname: "The Undecided Bull", bio: "Libra finance bro with an athlete's body and a toddler's ability to pick a restaurant. Can manage your portfolio but not a menu. Still deciding how to end this bio.", stats: stats([50, 60, 75, 55]), quote: "Whatever you guys want. Actually, no. Actually… whatever you want." },
+    { firstName: "Niha", nickname: "The Birthday Queen", bio: "Birthday queen, mom of the group, and somehow also the coolest person in the villa. Chill, badass, and savage: she'll hand you a snack and a roast in the same breath. Tonight she's the main event.", stats: stats([70, 35, 95, 90]), quote: "Relax, it's my birthday. Roast me. I dare you.", birthday: true },
+  ];
+  return rows.map((r, i) => ({ ...r, id: `s${i + 1}`, accent: ACCENTS[i], photo: null }));
+}
+
 /** Demo mode: entirely fictional people & jokes. Never real friends, never real confessions. */
 export function demoCast(): Islander[] {
   const base: Omit<Islander, "id" | "accent" | "photo">[] = [

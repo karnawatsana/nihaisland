@@ -8,7 +8,7 @@ import { Stage } from "@/components/Stage";
 import { Silhouette } from "@/components/Silhouette";
 import { createRoomApi, getToken, realtimeMode, useRoom } from "@/lib/useRoom";
 import { fileToDataUrl } from "@/lib/image";
-import { placeholderCast } from "@/lib/cast";
+import { partyCast, placeholderCast } from "@/lib/cast";
 import { CAST_SIZE } from "@/lib/sequence";
 import type { Islander, PosterConfig } from "@/lib/types";
 
@@ -108,9 +108,9 @@ function Editor({ code, onLogout }: { code: string; onLogout: () => void }) {
 
       {tab === "cast" && (
         <>
-          <p className="mt-4 max-w-3xl rounded-xl bg-black/25 px-4 py-3 text-sm">Every field is editable. Anything in <b>[BRACKETS]</b> is a placeholder and will show on the TV as-is — replace it with your own words. Photos are resized in your browser before upload.</p>
+          <p className="mt-4 max-w-3xl rounded-xl bg-black/25 px-4 py-3 text-sm">Every field is editable. Anything in <b>[BRACKETS]</b> is a placeholder and will show on the TV as-is. Order is fixed: seven islanders, then Niha as the Birthday Bombshell. Photos are resized in your browser before upload.</p>
           <div className="mt-4 grid gap-4 lg:grid-cols-2">{cast.map((c, i) => <CastCard key={c.id} c={c} i={i} onChange={(n) => edit(i, n)} />)}</div>
-          <button className="mt-6 text-sm underline" onClick={() => { if (confirm("Reset all eight profiles to blank placeholders? (Unsaved until you press Save.)")) { setCast(placeholderCast()); setDirty(true); } }}>Reset cast to placeholders</button>
+          <div className="mt-6 flex gap-6 text-sm"><button className="underline" onClick={() => { if (confirm("Reload the written intros? Photos and edits on screen are replaced (unsaved until you press Save).")) { setCast(partyCast()); setDirty(true); } }}>Reload written intros</button><button className="underline" onClick={() => { if (confirm("Reset all eight profiles to blank placeholders?")) { setCast(placeholderCast()); setDirty(true); } }}>Reset to blank placeholders</button></div>
         </>
       )}
 
