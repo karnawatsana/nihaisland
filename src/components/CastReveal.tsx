@@ -6,7 +6,7 @@ import { Sky } from "./Sky";
 import { Silhouette } from "./Silhouette";
 
 export const isPh = (t: string) => t.trim().startsWith("[");
-export const nameSize = (n: string, max: number) => Math.max(110, Math.min(max, (1000 / Math.max(n.length, 5)) * 1.7));
+export const nameSize = (n: string, max: number) => Math.max(110, Math.min(max, (880 / Math.max(n.length, 5)) * 1.7));
 
 function CountUp({ to, delay }: { to: number; delay: number }) {
   const [v, setV] = useState(0);
@@ -64,11 +64,11 @@ export function CastReveal({ islander, index, total, introKey, badge }: { island
       <div style={{ position: "absolute", top: 120, [right ? "left" : "right"]: -40, fontSize: 520, fontWeight: 800, letterSpacing: "-0.05em", color: "transparent", WebkitTextStroke: "3px rgba(255,255,255,.22)", textTransform: "uppercase", whiteSpace: "nowrap", lineHeight: 0.9 }}>{islander.firstName.replace(/[\[\]]/g, "").slice(0, 7)}</div>
       {/* portrait */}
       <motion.div initial={{ opacity: 0, y: 120, scale: 1.12, filter: "blur(18px)" }} animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }} transition={{ delay: 0.25, duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
-        style={{ position: "absolute", top: 108, [right ? "right" : "left"]: 150 }}>
+        style={{ position: "absolute", top: 108, [right ? "right" : "left"]: 130 }}>
         <Portrait islander={islander} w={640} h={860} />
       </motion.div>
       {/* copy */}
-      <div style={{ position: "absolute", top: 92, [right ? "left" : "right"]: 120, width: 1000 }}>
+      <div style={{ position: "absolute", top: 92, [right ? "left" : "right"]: 130, width: 890 }}>
         <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5, duration: 0.9 }} className="flex items-center gap-4"
           style={{ fontSize: 26, fontWeight: 700, letterSpacing: "0.4em", textShadow: "0 2px 12px rgba(0,60,90,.6)" }}>
           <span style={{ background: islander.accent, borderRadius: 99, padding: "6px 22px", letterSpacing: "0.25em", fontSize: 22 }}>{badge ?? `ISLANDER ${String(index + 1).padStart(2, "0")}/${String(total).padStart(2, "0")}`}</span>
@@ -83,12 +83,12 @@ export function CastReveal({ islander, index, total, introKey, badge }: { island
           “{islander.nickname.replace(/^"|"$/g, "")}”
         </motion.div>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.4, duration: 1 }}
-          style={{ marginTop: 22, fontSize: islander.bio.length > 175 ? 32 : 36, lineHeight: 1.3, fontWeight: 500, maxWidth: 930, color: "rgba(255,255,255,.96)", textShadow: "0 2px 14px rgba(0,40,70,.7)", ...ph(islander.bio) }}>
+          style={{ marginTop: 22, fontSize: islander.bio.length > 175 ? 32 : 36, lineHeight: 1.3, fontWeight: 500, maxWidth: 880, color: "rgba(255,255,255,.96)", textShadow: "0 2px 14px rgba(0,40,70,.7)", ...ph(islander.bio) }}>
           {islander.bio}
         </motion.p>
         <div style={{ marginTop: 32 }}><Stats islander={islander} /></div>
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2.6, duration: 1 }} className="glass"
-          style={{ marginTop: 30, borderRadius: 28, padding: "20px 34px", maxWidth: 930, display: "flex", gap: 20, alignItems: "flex-start", background: "rgba(3,40,66,.45)" }}>
+          style={{ marginTop: 30, borderRadius: 28, padding: "20px 34px", maxWidth: 890, display: "flex", gap: 20, alignItems: "flex-start", background: "rgba(3,40,66,.45)" }}>
           <span className="font-serif" style={{ fontSize: 96, lineHeight: 0.7, color: islander.accent, fontWeight: 700 }}>“</span>
           <span style={{ fontSize: 36, fontWeight: 600, fontStyle: "italic", lineHeight: 1.25, textShadow: "0 2px 10px rgba(0,30,50,.5)", ...ph(islander.quote) }}>{islander.quote}</span>
         </motion.div>
