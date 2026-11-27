@@ -9,7 +9,8 @@ import { Stage } from "./Stage";
 import { Poster } from "./Poster";
 import { CastReveal } from "./CastReveal";
 import { Bombshell } from "./Bombshell";
-import { FinaleScreen, HotSeatScreen, RoundScreen } from "./rounds";
+import { RoundScreen } from "./rounds";
+import { FinaleScreen, HotSeatOverlay } from "./games";
 import { Sky } from "./Sky";
 
 function Standby({ code, demo }: { code: string; demo: boolean }) {
@@ -45,9 +46,8 @@ function Scene({ data, onEnter, setReveal }: { data: RoomData; onEnter: () => vo
     case "host": return poster.host ? <CastReveal islander={poster.host} index={1} total={1} introKey={state.introKey} badge="★ YOUR HOST ★" /> : <Standby code={data.code} demo={demo} />;
     case "cast": return <CastReveal islander={cast[step.index]} index={step.index} total={CAST_SIZE - 1} introKey={state.introKey} />;
     case "bombshell": return <Bombshell islander={cast[CAST_SIZE - 1]} introKey={state.introKey} fallbackPhoto={poster.portrait} onReveal={setReveal} />;
-    case "round": return <RoundScreen id={step.id} introKey={state.introKey} />;
-    case "hotseat": return <HotSeatScreen introKey={state.introKey} />;
-    case "finale": return <FinaleScreen introKey={state.introKey} />;
+    case "round": return <RoundScreen id={step.id} data={data} />;
+    case "finale": return <FinaleScreen data={data} />;
   }
 }
 
@@ -74,12 +74,25 @@ export function Presentation({ code, contained = false }: { code: string; contai
       if (k === "poster") sfx.opening();
       else if (k === "cast" || k === "host") sfx.reveal();
       else if (k === "bombshell") sfx.siren();
-      else if (k === "hotseat") sfx.siren();
-      else if (k === "finale") sfx.fanfare();
+      else if (k === "finale") sfx.chime();
       else if (k !== "standby") sfx.whoosh();
     }
     prev.current = sceneKey;
   }, [sceneKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Game cues: countdown / verdict stamps / hot-seat siren / candles
+  const snap = useRef({ card: -1, beat: -1, hot: -1, fin: -1 });
+  useEffect(() => {
+    if (!data) return; const s = data.state, p = snap.current;
+    const k = STEPS[s.step].kind;
+    if (p.card >= 0) {
+      if (k === "round" && s.beat !== p.beat) { if (s.beat === 1) sfx.countdown(); else if (s.beat === 2) sfx.stamp(); }
+      if (k === "round" && s.card !== p.card) sfx.whoosh();
+      if (s.hot.on && s.hot.key !== p.hot) sfx.siren();
+      if (k === "finale" && s.finale !== p.fin && s.finale === 1) sfx.fanfare();
+    }
+    snap.current = { card: s.card, beat: s.beat, hot: s.hot.on ? s.hot.key : p.hot === -1 ? 0 : p.hot, fin: s.finale };
+  }, [data?.state.card, data?.state.beat, data?.state.hot.key, data?.state.hot.on, data?.state.finale, data?.state.step]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <Stage contained={contained}>
@@ -97,6 +110,7 @@ export function Presentation({ code, contained = false }: { code: string; contai
           {/* pink wipe on every scene change */}
           <motion.div key={`w${sceneKey}`} initial={{ x: "-110%" }} animate={{ x: "110%" }} transition={{ duration: 1.0, ease: [0.7, 0, 0.3, 1] }} className="stage-layer pointer-events-none"
             style={{ display: prev.current === "" || data.state.step === 0 ? "none" : "block", background: "linear-gradient(100deg,transparent 30%,#ff2d95 45%,#ffd27a 55%,transparent 70%)", mixBlendMode: "screen", opacity: 0.85 }} />
+          <AnimatePresence>{data.state.hot.on && <HotSeatOverlay key={data.state.hot.key} data={data} />}</AnimatePresence>
           {data.state.paused && (
             <div className="stage-layer flex flex-col items-center justify-center" style={{ background: "rgba(2,18,28,.72)", backdropFilter: "blur(16px)", zIndex: 40 }}>
               <div className="title-pink" style={{ fontSize: 190, fontWeight: 800, letterSpacing: "-0.04em" }}>paused</div>
@@ -105,7 +119,7 @@ export function Presentation({ code, contained = false }: { code: string; contai
           )}
           {status !== "live" && <div style={{ position: "absolute", top: 24, right: 28, zIndex: 50, borderRadius: 99, padding: "8px 22px", fontSize: 22, fontWeight: 600, letterSpacing: "0.2em", background: "rgba(255,160,0,.9)", color: "#2a1500" }}>{statusText[status].toUpperCase()}</div>}
           {!soundOk && !data.state.muted && (
-            <div style={{ position: "absolute", left: 28, top: 24, zIndex: 50, borderRadius: 99, padding: "8px 22px", fontSize: 20, fontWeight: 600, letterSpacing: "0.18em", background: "rgba(3,40,66,.6)", border: "1px solid rgba(255,255,255,.4)", opacity: 0.85 }}>🔊 CLICK ANYWHERE TO ENABLE SOUND</div>
+            <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", top: 14, zIndex: 50, borderRadius: 99, padding: "8px 22px", fontSize: 20, fontWeight: 600, letterSpacing: "0.18em", background: "rgba(3,40,66,.6)", border: "1px solid rgba(255,255,255,.4)", opacity: 0.85 }}>🔊 CLICK ANYWHERE TO ENABLE SOUND</div>
           )}
         </>
       )}

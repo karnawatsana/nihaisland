@@ -10,6 +10,8 @@ import { createRoomApi, getToken, realtimeMode, useRoom } from "@/lib/useRoom";
 import { fileToDataUrl } from "@/lib/image";
 import { partyCast, partyHost, placeholderCast } from "@/lib/cast";
 import { CAST_SIZE } from "@/lib/sequence";
+import { defaultDecks, GAME_META } from "@/lib/decks";
+import type { Decks } from "@/lib/types";
 import type { Islander, PosterConfig } from "@/lib/types";
 
 const KEY = "niha:setupRoom";
@@ -79,7 +81,7 @@ function Editor({ code, onLogout }: { code: string; onLogout: () => void }) {
   const [cast, setCast] = useState<Islander[] | null>(null);
   const [poster, setPoster] = useState<PosterConfig | null>(null);
   const [dirty, setDirty] = useState(false);
-  const [tab, setTab] = useState<"cast" | "poster" | "connect">("cast");
+  const [tab, setTab] = useState<"cast" | "poster" | "games" | "connect">("cast");
   const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
   const [qr, setQr] = useState("");
   const [saving, setSaving] = useState(false);
@@ -101,7 +103,7 @@ function Editor({ code, onLogout }: { code: string; onLogout: () => void }) {
         <div className="flex items-center gap-3 text-sm"><span className="rounded-xl bg-white/20 px-4 py-2 text-2xl font-extrabold tracking-[.25em]">{code}</span><button className="underline" onClick={onLogout}>Switch room</button></div>
       </div>
       <div className="mt-5 flex gap-2" role="tablist">
-        {(["cast", "poster", "connect"] as const).map((t) => (
+        {(["cast", "poster", "games", "connect"] as const).map((t) => (
           <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)} className={`rounded-full px-5 py-2 text-sm font-bold uppercase tracking-[.2em] ${tab === t ? "bg-hot" : "bg-white/15"}`}>{t === "connect" ? "TV & Phone" : t}</button>
         ))}
       </div>
@@ -155,6 +157,36 @@ function Editor({ code, onLogout }: { code: string; onLogout: () => void }) {
           </div>
         </div>
       )}
+
+      {tab === "games" && (() => {
+        const decks: Decks = poster.decks ?? defaultDecks();
+        const setDeck = (d: Partial<Decks>) => editPoster({ decks: { ...decks, ...d } });
+        const ta = (key: "canceled" | "redflag" | "exposed" | "hotseat", title: string, hint: string) => (
+          <div className="rounded-3xl border border-white/30 bg-[#04283e]/55 p-4 backdrop-blur" key={key}>
+            <div className="text-sm font-extrabold uppercase tracking-[.15em]">{title}</div>
+            <p className="mt-1 text-xs text-white/80">{hint} · {decks[key].filter((x) => x.trim()).length} cards</p>
+            <textarea aria-label={title} rows={9} className={`${input} mt-2 font-mono text-sm`} value={decks[key].join("\n")} onChange={(e) => setDeck({ [key]: e.target.value.split("\n") })} />
+          </div>
+        );
+        return (
+          <div className="mt-4">
+            <p className="max-w-3xl rounded-xl bg-black/25 px-4 py-3 text-sm">One card per line, in the order they&apos;ll appear. The starter cards are generic and silly — swap in your real inside jokes! The <b>Receipts</b> reveal text is optional (shown after the stamp).</p>
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <div className="rounded-3xl border border-white/30 bg-[#04283e]/55 p-4 backdrop-blur">
+                <div className="text-sm font-extrabold uppercase tracking-[.15em]">{GAME_META.receipts.icon} {GAME_META.receipts.title}</div>
+                <p className="mt-1 text-xs text-white/80">Format: <code>question || optional reveal text</code> · {decks.receipts.filter((x) => x.q.trim()).length} cards</p>
+                <textarea aria-label="Receipts deck" rows={9} className={`${input} mt-2 font-mono text-sm`} value={decks.receipts.map((r) => (r.reveal ? `${r.q} || ${r.reveal}` : r.q)).join("\n")}
+                  onChange={(e) => setDeck({ receipts: e.target.value.split("\n").map((l) => { const [q, ...rest] = l.split("||"); return { q, reveal: rest.join("||").trim() }; }) })} />
+              </div>
+              {ta("canceled", `${GAME_META.canceled.icon} Most likely to get canceled for…`, "Finish the sentence: “Most likely to get canceled for …”")}
+              {ta("redflag", `${GAME_META.redflag.icon} Red flag or just a personality?`, "A quirk or habit to judge")}
+              {ta("exposed", `${GAME_META.exposed.icon} Never have I ever…`, "Finish the sentence: “Never have I ever …”")}
+              {ta("hotseat", "🔥 Hot Seat questions", "Asked at random when you hit the Hot Seat button")}
+            </div>
+            <button className="mt-5 text-sm underline" onClick={() => { if (confirm("Replace all game cards with the starter set? (Unsaved until you press Save.)")) editPoster({ decks: defaultDecks() }); }}>Reset to starter cards</button>
+          </div>
+        );
+      })()}
 
       {tab === "connect" && (
         <div className="mt-4 grid gap-5 md:grid-cols-2">

@@ -18,14 +18,34 @@ export interface PosterConfig {
   scale: number;  // 1 = default height
   flip: boolean;
   host?: Islander; // the host intro card (stored alongside the poster settings)
+  decks?: Decks;   // editable game content (stored alongside the poster settings)
   cutout?: boolean; // true when the portrait has transparent edges (background removed)
 }
+export type GameKey = "receipts" | "canceled" | "redflag" | "exposed";
+export interface Decks {
+  receipts: { q: string; reveal: string }[];
+  canceled: string[];
+  redflag: string[];
+  exposed: string[];
+  hotseat: string[];
+}
+export interface GameResults {
+  canceled: Record<string, number[]>;           // card index -> islander indexes who got "canceled"
+  exposed: Record<string, number[]>;            // card index -> islander indexes who put a finger down
+  redflag: Record<string, "red" | "ok">;        // card index -> verdict
+}
+export interface HotSeat { on: boolean; who: number; q: number; key: number }
 export interface PresState {
   step: number;
   paused: boolean;
   muted: boolean;
   introKey: number; // bump to replay the animation of the current scene
   changedAt: number;
+  card: number;      // current card in a game round
+  beat: number;      // 0 prompt · 1 countdown/vote · 2 result
+  res: GameResults;
+  hot: HotSeat;      // surprise Hot Seat overlay (works on top of any scene)
+  finale: number;    // 0 candles lit · 1 blown out
 }
 export type Command =
   | { type: "next" } | { type: "prev" }
@@ -34,7 +54,11 @@ export type Command =
   | { type: "startCast" } | { type: "bombshell" }
   | { type: "restart" } | { type: "standby" }
   | { type: "togglePause" } | { type: "toggleMute" }
-  | { type: "enter" };
+  | { type: "enter" }
+  | { type: "gnext" } | { type: "gprev" }
+  | { type: "mark"; who: number } | { type: "verdict"; v: "red" | "ok" }
+  | { type: "hotStart"; who: number; q: number } | { type: "hotEnd" }
+  | { type: "finale"; stage: number };
 export interface RoomView {
   code: string;
   demo: boolean;

@@ -8,7 +8,7 @@ import { rng } from "@/lib/rng";
 
 const ALERT_MS = 5600;
 
-function Confetti() {
+export function Confetti() {
   const pieces = useMemo(() => { const R = rng(21); const cols = ["#ff2d95", "#ffd27a", "#19c3dc", "#fff", "#ff7ac0", "#ffe9a8"]; return Array.from({ length: 70 }, (_, i) => ({ x: R() * 1920, d: R() * 5, t: 5 + R() * 4, w: 10 + R() * 14, h: 16 + R() * 18, c: cols[i % cols.length], cx: (R() - 0.5) * 300, cr: 360 + R() * 900 })); }, []);
   return (
     <div className="stage-layer pointer-events-none overflow-hidden">

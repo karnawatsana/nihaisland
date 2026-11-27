@@ -1,10 +1,11 @@
 import { getRoom, updateRoom } from "@/server/store";
 import { isHost, json, normCode, toView } from "@/server/view";
-import { reduce } from "@/lib/reducer";
+import { norm, reduce } from "@/lib/reducer";
+import { defaultDecks } from "@/lib/decks";
 import type { Command } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
-const TYPES = ["next","prev","goto","openPoster","replayOpening","startCast","bombshell","restart","standby","togglePause","toggleMute","enter"];
+const TYPES = ["next","prev","goto","openPoster","replayOpening","startCast","bombshell","restart","standby","togglePause","toggleMute","enter","gnext","gprev","mark","verdict","hotStart","hotEnd","finale"];
 
 export async function POST(req: Request, { params }: { params: Promise<{ code: string }> }) {
   const code = normCode((await params).code);
@@ -15,9 +16,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ code: s
   // The only public command is the TV's own ENTER THE VILLA button (poster → first islander).
   if (cmd.type !== "enter" && !isHost(req, r0)) return json({ error: "Host PIN required" }, 401);
   if (cmd.type === "goto" && !Number.isInteger(cmd.step)) return json({ error: "Bad step" }, 400);
+  const isIdx = (n: unknown) => Number.isInteger(n) && (n as number) >= 0 && (n as number) < 8;
+  if (cmd.type === "mark" && !isIdx(cmd.who)) return json({ error: "Bad islander" }, 400);
+  if (cmd.type === "hotStart" && (!isIdx(cmd.who) || !Number.isInteger(cmd.q) || cmd.q < 0)) return json({ error: "Bad hot seat" }, 400);
+  if (cmd.type === "verdict" && cmd.v !== "red" && cmd.v !== "ok") return json({ error: "Bad verdict" }, 400);
+  if (cmd.type === "finale" && cmd.stage !== 0 && cmd.stage !== 1) return json({ error: "Bad stage" }, 400);
   const r = await updateRoom(code, (rec) => {
-    const state = reduce(rec.state, cmd);
-    if (JSON.stringify(state) === JSON.stringify(rec.state)) return null;
+    const d = rec.poster.decks ?? defaultDecks();
+    const ctx = { lens: { receipts: d.receipts.length, canceled: d.canceled.length, redflag: d.redflag.length, exposed: d.exposed.length } };
+    const state = reduce(rec.state, cmd, Date.now(), ctx);
+    if (JSON.stringify(state) === JSON.stringify(norm(rec.state))) return null;
     return { ...rec, state, version: rec.version + 1 };
   });
   return json(toView(r!, Number(new URL(req.url).searchParams.get("cv") ?? -1)));

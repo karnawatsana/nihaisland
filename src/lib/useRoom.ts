@@ -1,10 +1,12 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-import type { Command, Islander, PosterConfig, PresState, RoomView } from "./types";
+import type { Command, Decks, Islander, PosterConfig, PresState, RoomView } from "./types";
+import { norm } from "./reducer";
+import { defaultDecks } from "./decks";
 
 export type Status = "connecting" | "live" | "offline" | "missing";
-export interface RoomData { code: string; demo: boolean; state: PresState; cast: Islander[]; poster: PosterConfig; version: number }
+export interface RoomData { code: string; demo: boolean; state: PresState; cast: Islander[]; poster: PosterConfig; decks: Decks; version: number }
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SB_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -31,7 +33,7 @@ export function useRoom(code: string | null) {
     const poster = v.poster ?? r.data?.poster;
     if (!cast || !poster) return;
     r.cv = v.contentVersion; r.v = v.version;
-    r.data = { code: v.code, demo: v.demo, state: v.state, cast, poster, version: v.version };
+    r.data = { code: v.code, demo: v.demo, state: norm(v.state), cast, poster, decks: poster.decks ?? defaultDecks(), version: v.version };
     setData(r.data);
   }, []);
 

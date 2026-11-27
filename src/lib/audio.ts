@@ -76,6 +76,14 @@ class Sfx {
     [523.25, 659.25, 783.99, 1046.5].forEach((f) => this.tone(f, t + 0.7, 2.6, "triangle", 0.09, 0.04));
     for (let i = 0; i < 14; i++) this.tone(1200 + Math.random() * 2400, t + 0.9 + i * 0.07, 0.8, "sine", 0.04, 0.005);
   }
+  /** 3-2-1 beeps then a bright "go" ding. */
+  countdown() {
+    if (!this.ok()) return; const t = this.ctx!.currentTime + 0.02;
+    [0, 1, 2].forEach((i) => this.tone(660, t + i, 0.18, "square", 0.06, 0.005));
+    [880, 1318.5].forEach((f) => this.tone(f, t + 3, 0.7, "triangle", 0.1, 0.005));
+  }
+  /** Rubber-stamp thud for verdicts. */
+  stamp() { if (!this.ok()) return; const t = this.ctx!.currentTime; this.tone(110, t, 0.35, "sine", 0.3, 0.003, 45); this.noise(t, 0.12, 900, 300, 0.2); }
   chime() { if (!this.ok()) return; const t = this.ctx!.currentTime; [659.25, 987.77].forEach((f, i) => this.tone(f, t + i * 0.12, 0.9, "sine", 0.1, 0.005)); }
 }
 export const sfx = new Sfx();

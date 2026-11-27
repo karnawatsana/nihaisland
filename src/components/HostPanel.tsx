@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRoom, type Status } from "@/lib/useRoom";
 import { CAST_SIZE, ROUNDS, STEP, STEPS, stepLabel } from "@/lib/sequence";
+import { GAME_META } from "@/lib/decks";
 import type { Command } from "@/lib/types";
 
 const dot: Record<Status, string> = { live: "bg-emerald-400", connecting: "bg-amber-400", offline: "bg-red-500", missing: "bg-red-500" };
@@ -40,6 +41,62 @@ export function HostPanel({ code, onLogout, compact = false }: { code: string; o
         <div className="mt-1 text-right text-xs text-white/70">Step {state.step + 1} / {STEPS.length}</div>
       </div>
 
+      {step.kind === "round" && (() => {
+        const id = step.id; const meta = GAME_META[id];
+        const list: string[] = id === "receipts" ? data.decks.receipts.map((r) => r.q) : data.decks[id];
+        const idx = Math.min(state.card, Math.max(list.length - 1, 0));
+        const last = idx >= list.length - 1 && state.beat >= 2;
+        const picks = id === "canceled" || id === "exposed" ? state.res[id][String(idx)] ?? [] : [];
+        const verdict = id === "redflag" ? state.res.redflag[String(idx)] : undefined;
+        return (
+          <div className="mt-4 rounded-3xl border border-white/30 bg-[#04283e]/60 p-4 backdrop-blur" data-testid="game-panel">
+            <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[.25em] text-gold"><span>{meta.icon} Card {idx + 1} / {list.length}</span><span>Step {state.beat + 1} / 3</span></div>
+            <div className="mt-2 text-base font-semibold leading-snug text-white/95">{list[idx] ?? "(empty deck)"}</div>
+            <button disabled={last} onClick={() => { buzz(); run({ type: "gnext" }); }} className="mt-3 w-full rounded-2xl bg-gradient-to-br from-hot to-[#d4106f] py-5 text-lg font-extrabold tracking-wide shadow-lg shadow-hot/40 transition active:scale-[.97] disabled:opacity-40">{last ? "Last card done — tap NEXT ▶" : `${meta.labels[state.beat]} ▶`}</button>
+            <button onClick={() => { buzz(); run({ type: "gprev" }); }} className="mt-2 w-full rounded-xl bg-white/15 py-2.5 text-sm font-bold">◀ Back a step</button>
+            {id === "redflag" && (
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button onClick={() => { buzz(); run({ type: "verdict", v: "red" }); }} className={`rounded-xl py-3 text-sm font-bold ${verdict === "red" ? "bg-red-500" : "bg-white/15"}`}>🚩 Red flag</button>
+                <button onClick={() => { buzz(); run({ type: "verdict", v: "ok" }); }} className={`rounded-xl py-3 text-sm font-bold ${verdict === "ok" ? "bg-emerald-500" : "bg-white/15"}`}>✅ Personality</button>
+              </div>
+            )}
+            {(id === "canceled" || id === "exposed") && (
+              <>
+                <div className="mt-3 text-[11px] font-semibold uppercase tracking-[.2em] text-white/70">{id === "canceled" ? "Tap who got canceled" : "Tap who put a finger down"}</div>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  {cast.slice(0, CAST_SIZE).map((c, i) => (
+                    <button key={c.id} onClick={() => { buzz(); run({ type: "mark", who: i }); }} className={`truncate rounded-xl px-3 py-2.5 text-left text-sm font-semibold ${picks.includes(i) ? "bg-hot" : "bg-white/15"}`}>{picks.includes(i) ? (id === "exposed" ? "👇 " : "🚫 ") : ""}{c.firstName.replace(/[\[\]]/g, "")}</button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        );
+      })()}
+
+      {step.kind === "finale" && (
+        <div className="mt-4 grid grid-cols-2 gap-3 rounded-3xl border border-white/30 bg-[#04283e]/60 p-4 backdrop-blur" data-testid="finale-panel">
+          <Btn onClick={() => run({ type: "finale", stage: 0 })} className={state.finale === 0 ? "bg-amber-400 text-black" : "bg-white/15 ring-1 ring-white/30"}>🕯 Candles lit</Btn>
+          <Btn onClick={() => run({ type: "finale", stage: 1 })} className="bg-gradient-to-br from-hot to-[#d4106f]">🌬 Blow them out!</Btn>
+        </div>
+      )}
+
+      <div className="mt-4 rounded-3xl border border-red-400/60 bg-red-900/30 p-4 backdrop-blur" data-testid="hot-panel">
+        <div className="text-[11px] font-semibold uppercase tracking-[.3em] text-red-200">🔥 Surprise Hot Seat{state.hot.on ? " · ON AIR" : ""}</div>
+        {state.hot.on ? (
+          <Btn onClick={() => run({ type: "hotEnd" })} className="mt-3 w-full bg-white text-red-700">✖ End Hot Seat</Btn>
+        ) : (
+          <>
+            <Btn onClick={() => { const q = Math.floor(Math.random() * Math.max(data.decks.hotseat.length, 1)); run({ type: "hotStart", who: Math.floor(Math.random() * CAST_SIZE), q }); }} className="mt-3 w-full bg-gradient-to-br from-red-500 to-[#ff2d95]">🎲 Random victim!</Btn>
+            <div className="mt-2 grid grid-cols-4 gap-1.5">
+              {cast.slice(0, CAST_SIZE).map((c, i) => (
+                <button key={c.id} onClick={() => { buzz(); run({ type: "hotStart", who: i, q: Math.floor(Math.random() * Math.max(data.decks.hotseat.length, 1)) }); }} className="truncate rounded-lg bg-white/15 px-1 py-2 text-xs font-semibold">{c.firstName.replace(/[\[\]]/g, "")}</button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
       {err && <div role="alert" className="mt-3 rounded-xl bg-red-500/90 px-3 py-2 text-sm font-semibold">{err}</div>}
 
       <div className="mt-4 grid grid-cols-2 gap-3">
@@ -70,12 +127,11 @@ export function HostPanel({ code, onLogout, compact = false }: { code: string; o
           ))}
           <button onClick={() => { buzz(); run({ type: "bombshell" }); }} className={`truncate rounded-xl px-3 py-2 text-left text-sm font-semibold ${step.kind === "bombshell" ? "bg-hot" : "bg-gradient-to-r from-[#ffb02e]/60 to-[#ff2d95]/60"}`}>★ {cast[CAST_SIZE - 1].firstName}</button>
         </div>
-        <div className="mt-4 text-[11px] font-semibold uppercase tracking-[.25em] text-white/70">Rounds (Phase 2 placeholders)</div>
+        <div className="mt-4 text-[11px] font-semibold uppercase tracking-[.25em] text-white/70">Rounds</div>
         <div className="mt-2 grid gap-2">
           {ROUNDS.map((r, i) => (
             <button key={r.id} onClick={() => { buzz(); run({ type: "goto", step: STEP.bombshell + 1 + i }); }} className={`rounded-xl px-3 py-2 text-left text-sm font-semibold ${state.step === STEP.bombshell + 1 + i ? "bg-hot" : "bg-white/15"}`}>{r.icon} {r.n}. {r.title}</button>
           ))}
-          <button onClick={() => run({ type: "goto", step: STEP.lastStep - 1 })} className={`rounded-xl px-3 py-2 text-left text-sm font-semibold ${step.kind === "hotseat" ? "bg-hot" : "bg-white/15"}`}>🔥 Hot Seat interruption</button>
           <button onClick={() => run({ type: "goto", step: STEP.lastStep })} className={`rounded-xl px-3 py-2 text-left text-sm font-semibold ${step.kind === "finale" ? "bg-hot" : "bg-white/15"}`}>🎂 Birthday finale</button>
         </div>
       </details>

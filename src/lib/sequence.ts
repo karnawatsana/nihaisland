@@ -10,7 +10,7 @@ export type Step =
   | { kind: "cast"; index: number }
   | { kind: "bombshell" }
   | { kind: "round"; id: RoundId }
-  | { kind: "hotseat" } | { kind: "finale" };
+  | { kind: "finale" };
 
 export type RoundId = "receipts" | "canceled" | "redflag" | "exposed";
 
@@ -30,7 +30,6 @@ export const STEPS: Step[] = [
   ...Array.from({ length: CAST_SIZE - 1 }, (_, i) => ({ kind: "cast", index: i }) as Step),
   { kind: "bombshell" },
   ...ROUNDS.map((r) => ({ kind: "round", id: r.id }) as Step),
-  { kind: "hotseat" },
   { kind: "finale" },
 ];
 
@@ -40,6 +39,7 @@ export const STEP = {
   host: 2,
   firstCast: 3,
   bombshell: 3 + (CAST_SIZE - 1),
+  finale: STEPS.length - 1,
   lastStep: STEPS.length - 1,
 };
 
@@ -53,7 +53,6 @@ export function stepLabel(step: number, cast: Islander[], hostName?: string): st
     case "cast": return `Islander ${s.index + 1}/${CAST_SIZE - 1} · ${cast[s.index]?.firstName ?? ""}`;
     case "bombshell": return `Birthday Bombshell · ${cast[CAST_SIZE - 1]?.firstName ?? ""}`;
     case "round": { const r = ROUNDS.find((x) => x.id === s.id)!; return `Round ${r.n} · ${r.title}`; }
-    case "hotseat": return "Hot Seat (placeholder)";
-    case "finale": return "Birthday Finale (placeholder)";
+    case "finale": return "Birthday finale 🎂";
   }
 }
