@@ -52,7 +52,8 @@ export async function createRoom(r: RoomRecord) {
 
 /** Optimistic-concurrency update: `mutate` is re-run on the fresh record if someone else wrote first. */
 export async function updateRoom(code: string, mutate: (r: RoomRecord) => RoomRecord | null): Promise<RoomRecord | null> {
-  for (let attempt = 0; attempt < 4; attempt++) {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    if (attempt) await new Promise((r) => setTimeout(r, 25 + Math.random() * 90));
     const cur = await getRoom(code);
     if (!cur) return null;
     const next = mutate(structuredClone(cur));

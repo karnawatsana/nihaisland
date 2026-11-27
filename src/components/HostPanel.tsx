@@ -52,6 +52,16 @@ export function HostPanel({ code, onLogout, compact = false }: { code: string; o
           <div className="mt-4 rounded-3xl border border-white/30 bg-[#04283e]/60 p-4 backdrop-blur" data-testid="game-panel">
             <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[.25em] text-gold"><span>{meta.icon} Card {idx + 1} / {list.length}</span><span>Step {state.beat + 1} / 3</span></div>
             <div className="mt-2 text-base font-semibold leading-snug text-white/95">{list[idx] ?? "(empty deck)"}</div>
+            {(() => {
+              const voters = [...cast.slice(0, CAST_SIZE), ...(data.poster.host ? [data.poster.host] : [])];
+              const cv = state.votes[`${id}:${idx}`] ?? {}; const missing = voters.filter((_, i) => cv[String(i)] === undefined);
+              return (
+                <div className="mt-3 rounded-2xl bg-black/25 p-3">
+                  <button onClick={() => { buzz(); run({ type: "pv", on: !state.pv }); }} className={`w-full rounded-xl py-2.5 text-sm font-extrabold ${state.pv ? "bg-emerald-500" : "bg-white/20"}`}>📱 Phone voting: {state.pv ? "ON" : "OFF"}</button>
+                  {state.pv && <div className="mt-2 text-xs text-white/85" data-testid="vote-status">{Object.keys(cv).length} / {voters.length} voted{state.beat === 1 && missing.length > 0 && missing.length < voters.length ? ` · waiting on ${missing.map((m) => m.firstName.replace(/[\[\]]/g, "")).join(", ")}` : ""}</div>}
+                </div>
+              );
+            })()}
             <button disabled={last} onClick={() => { buzz(); run({ type: "gnext" }); }} className="mt-3 w-full rounded-2xl bg-gradient-to-br from-hot to-[#d4106f] py-5 text-lg font-extrabold tracking-wide shadow-lg shadow-hot/40 transition active:scale-[.97] disabled:opacity-40">{last ? "Last card done — tap NEXT ▶" : `${meta.labels[state.beat]} ▶`}</button>
             <button onClick={() => { buzz(); run({ type: "gprev" }); }} className="mt-2 w-full rounded-xl bg-white/15 py-2.5 text-sm font-bold">◀ Back a step</button>
             {id === "redflag" && (

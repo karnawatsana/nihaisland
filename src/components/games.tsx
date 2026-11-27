@@ -1,6 +1,7 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
+import QRCode from "qrcode";
 import type { RoomData } from "@/lib/useRoom";
 import type { GameKey, Islander } from "@/lib/types";
 import { GAME_META } from "@/lib/decks";
@@ -11,7 +12,7 @@ import { Silhouette } from "./Silhouette";
 import { Confetti } from "./Bombshell";
 import { Portrait } from "./CastReveal";
 
-export function Avatar({ c, size, ring = false, badge, count }: { c: Islander; size: number; ring?: boolean; badge?: string; count?: number }) {
+export function Avatar({ c, size, ring = false, badge, count, tag }: { c: Islander; size: number; ring?: boolean; badge?: string; count?: number; tag?: string }) {
   return (
     <div style={{ position: "relative", width: size, height: size }}>
       <div style={{ width: size, height: size, borderRadius: "50%", overflow: "hidden", border: `${ring ? 7 : 4}px solid ${ring ? "#ffe39a" : "rgba(255,255,255,.7)"}`, boxShadow: ring ? `0 0 50px 8px ${c.accent}` : "0 8px 20px rgba(0,30,50,.4)", background: `linear-gradient(180deg,${c.accent}77,#3a0b5299)`, transition: "all .4s" }}>
@@ -21,7 +22,7 @@ export function Avatar({ c, size, ring = false, badge, count }: { c: Islander; s
         ) : <Silhouette color={c.accent} />}
       </div>
       {badge && <div style={{ position: "absolute", right: -8, top: -10, fontSize: size * 0.4, filter: "drop-shadow(0 4px 8px rgba(0,0,0,.4))" }}>{badge}</div>}
-      {!!count && <div style={{ position: "absolute", left: "50%", bottom: -14, transform: "translateX(-50%)", background: "#fff", color: "#06344d", fontWeight: 800, fontSize: size * 0.24, borderRadius: 99, padding: "0 14px", boxShadow: "0 4px 12px rgba(0,0,0,.3)" }}>×{count}</div>}
+      {tag ? <div style={{ position: "absolute", left: "50%", bottom: -14, transform: "translateX(-50%)", background: "#ffe39a", color: "#06344d", fontWeight: 800, fontSize: size * 0.22, borderRadius: 99, padding: "0 12px", whiteSpace: "nowrap", boxShadow: "0 4px 12px rgba(0,0,0,.3)" }}>{tag}</div> : !!count && <div style={{ position: "absolute", left: "50%", bottom: -14, transform: "translateX(-50%)", background: "#fff", color: "#06344d", fontWeight: 800, fontSize: size * 0.24, borderRadius: 99, padding: "0 14px", boxShadow: "0 4px 12px rgba(0,0,0,.3)" }}>×{count}</div>}
     </div>
   );
 }
@@ -46,6 +47,35 @@ function Countdown({ word, runKey }: { word: string; runKey: string }) {
   );
 }
 
+function useVoteQr(code: string, size = 360) {
+  const [qr, setQr] = useState("");
+  useEffect(() => { QRCode.toDataURL(`${location.origin}/vote?room=${code}`, { margin: 1, width: size, color: { dark: "#06344d", light: "#ffffff" } }).then(setQr); }, [code, size]);
+  return qr;
+}
+
+function VoteNow({ data, voted, total, prompt }: { data: RoomData; voted: number; total: number; prompt: string }) {
+  const qr = useVoteQr(data.code, 440);
+  return (
+    <div className="stage-layer" style={{ zIndex: 5, background: "rgba(2,28,44,.82)", backdropFilter: "blur(10px)" }}>
+      <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} style={{ position: "absolute", left: 110, top: 150, width: 900 }}>
+        <div style={{ fontSize: 34, fontWeight: 700, letterSpacing: "0.45em", color: "#ffe39a" }}>📱 VOTING IS OPEN</div>
+        <div className="title-pink" style={{ fontSize: 160, fontWeight: 800, lineHeight: 0.95, letterSpacing: "-0.04em", marginTop: 14 }}>vote on<br />your phone</div>
+        <div style={{ marginTop: 34, fontSize: 40, fontWeight: 600, lineHeight: 1.25, opacity: 0.95, maxWidth: 940 }}>“{prompt}”</div>
+        <div style={{ marginTop: 44, display: "flex", alignItems: "center", gap: 28 }}>
+          <div style={{ flex: 1, height: 30, borderRadius: 99, background: "rgba(255,255,255,.18)", overflow: "hidden", maxWidth: 460 }}>
+            <motion.div animate={{ width: `${(voted / total) * 100}%` }} transition={{ type: "spring", stiffness: 120, damping: 20 }} style={{ height: "100%", borderRadius: 99, background: "linear-gradient(90deg,#ff2d95,#ffd27a)" }} />
+          </div>
+          <div style={{ fontSize: 56, fontWeight: 800, whiteSpace: "nowrap" }}>{voted}<span style={{ opacity: 0.65, fontSize: 36 }}> / {total} voted</span></div>
+        </div>
+      </motion.div>
+      <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }} style={{ position: "absolute", right: 130, top: 190, width: 560, textAlign: "center" }}>
+        <div style={{ display: "inline-block", background: "#fff", padding: 22, borderRadius: 36, boxShadow: "0 0 80px rgba(255,45,149,.6)", lineHeight: 0 }}>{qr && /* eslint-disable-next-line @next/next/no-img-element */ <img src={qr} width={440} height={440} alt="Scan to vote" />}</div>
+        <div style={{ marginTop: 28, fontSize: 32, fontWeight: 700, letterSpacing: "0.16em", lineHeight: 1.3 }}>SCAN · PICK WHO YOU ARE · VOTE</div>
+      </motion.div>
+    </div>
+  );
+}
+
 const sum = (m: Record<string, unknown[]>) => Object.values(m).reduce((a, v) => a + v.length, 0);
 const tallyOf = (m: Record<string, number[]>, who: number) => Object.values(m).filter((v) => v.includes(who)).length;
 
@@ -61,6 +91,10 @@ export function GameScreen({ id, data }: { id: GameKey; data: RoomData }) {
   const verdict = id === "redflag" ? state.res.redflag[String(idx)] : undefined;
   const islanders = cast.slice(0, CAST_SIZE);
   const beat = state.beat;
+  const votesKey = `${id}:${idx}`; const cardVotes = state.votes[votesKey] ?? {};
+  const voted = Object.keys(cardVotes).length; const voters = islanders.length + (data.poster.host ? 1 : 0);
+  const voteCount = (who: number) => Object.values(cardVotes).filter((x) => x === who).length;
+  const qrSmall = useVoteQr(data.code, 200);
   const runKey = `${state.introKey}-${idx}-${beat}`;
 
   const header = id === "canceled" ? "MOST LIKELY TO GET CANCELED FOR…" : id === "redflag" ? "RED FLAG — OR JUST A PERSONALITY?" : id === "exposed" ? "NEVER HAVE I EVER…" : null;
@@ -101,8 +135,9 @@ export function GameScreen({ id, data }: { id: GameKey; data: RoomData }) {
       {/* result stamps */}
       {beat >= 2 && (
         <div style={{ position: "absolute", left: 0, right: 0, top: id === "receipts" ? 760 : 650, display: "flex", flexDirection: id === "canceled" ? "row" : "column", justifyContent: "center", alignItems: "center", gap: id === "canceled" ? 44 : 20, zIndex: 3 }}>
-          {id === "receipts" && <><Stamp text="Receipt printed" color="#0a9f6b" />{(decks.receipts[idx]?.reveal || "") && <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} style={{ fontSize: 46, fontWeight: 700, background: "rgba(3,40,66,.7)", borderRadius: 24, padding: "14px 40px", maxWidth: 1500, textAlign: "center" }}>{decks.receipts[idx].reveal}</motion.div>}</>}
+          {id === "receipts" && <>{(state.res.receipts[String(idx)] ?? []).length > 0 && <div style={{ display: "flex", gap: 24 }}>{(state.res.receipts[String(idx)] ?? []).map((w) => <Avatar key={w} c={islanders[w]} size={130} ring tag={state.pv && voted ? `${voteCount(w)} vote${voteCount(w) === 1 ? "" : "s"}` : undefined} />)}</div>}<Stamp text="Receipt printed" color="#0a9f6b" />{(decks.receipts[idx]?.reveal || "") && <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} style={{ fontSize: 46, fontWeight: 700, background: "rgba(3,40,66,.7)", borderRadius: 24, padding: "14px 40px", maxWidth: 1500, textAlign: "center" }}>{decks.receipts[idx].reveal}</motion.div>}</>}
           {id === "canceled" && (picks.length ? <><div style={{ display: "flex", gap: 24 }}>{picks.map((w) => <Avatar key={w} c={islanders[w]} size={150} ring />)}</div><Stamp text={`${picks.map((w) => islanders[w].firstName.replace(/[\[\]]/g, "")).join(" & ")} — canceled`} color="#e0127c" size={64} rot={-3} /></> : <Stamp text="Nobody. This time." color="#06344d" size={70} rot={-3} />)}
+          {id === "redflag" && state.pv && voted > 0 && <div style={{ fontSize: 44, fontWeight: 800, background: "rgba(3,40,66,.7)", borderRadius: 99, padding: "6px 36px" }}>🚩 {Object.values(cardVotes).filter((x) => x === "red").length} &nbsp;·&nbsp; ✅ {Object.values(cardVotes).filter((x) => x === "ok").length}</div>}
           {id === "redflag" && (verdict === "red" ? <Stamp text="🚩 Red flag" color="#e0221c" size={110} /> : verdict === "ok" ? <Stamp text="✅ Just a personality" color="#0a9f6b" size={90} /> : <Stamp text="Hung jury" color="#06344d" size={90} />)}
           {id === "exposed" && <Stamp text={picks.length ? `${picks.length} finger${picks.length > 1 ? "s" : ""} down — exposed!` : "Squeaky clean (liars)"} color={picks.length ? "#e0127c" : "#0a9f6b"} size={62} rot={-3} />}
         </div>
@@ -113,13 +148,20 @@ export function GameScreen({ id, data }: { id: GameKey; data: RoomData }) {
         <div style={{ position: "absolute", left: 0, right: 0, bottom: 56, display: "flex", justifyContent: "center", gap: 36, zIndex: 3 }}>
           {islanders.map((c, i) => (
             <div key={c.id} style={{ textAlign: "center", opacity: beat >= 2 && picks.length && !picks.includes(i) ? 0.45 : 1, transition: "opacity .4s" }}>
-              <Avatar c={c} size={beat >= 2 ? 112 : 124} ring={picks.includes(i)} badge={picks.includes(i) ? (id === "exposed" ? "👇" : "🚫") : undefined} count={tallyOf(state.res[id], i)} />
+              <Avatar c={c} size={beat >= 2 ? 112 : 124} ring={picks.includes(i)} badge={picks.includes(i) ? (id === "exposed" ? "👇" : "🚫") : undefined} count={tallyOf(state.res[id], i)} tag={beat >= 2 && state.pv && id === "canceled" && voteCount(i) ? `${voteCount(i)} vote${voteCount(i) === 1 ? "" : "s"}` : undefined} />
               <div style={{ marginTop: 18, fontSize: 24, fontWeight: 700, textShadow: "0 2px 10px rgba(0,30,50,.7)" }}>{c.firstName.replace(/[\[\]]/g, "")}</div>
             </div>
           ))}
         </div>
       )}
-      {beat === 1 && <Countdown word={meta.word} runKey={runKey} />}
+      {state.pv && beat !== 1 && qrSmall && (
+        <div style={{ position: "absolute", right: 56, bottom: 40, textAlign: "center", zIndex: 6 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={qrSmall} width={150} height={150} alt="Scan to vote" style={{ background: "#fff", padding: 8, borderRadius: 18, boxShadow: "0 8px 24px rgba(0,30,50,.5)" }} />
+          <div style={{ marginTop: 6, fontSize: 18, fontWeight: 700, letterSpacing: "0.2em" }}>SCAN TO VOTE</div>
+        </div>
+      )}
+      {beat === 1 && (state.pv ? <VoteNow data={data} voted={voted} total={voters} prompt={prompt} /> : <Countdown word={meta.word} runKey={runKey} />)}
     </div>
   );
 }

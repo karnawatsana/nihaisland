@@ -30,6 +30,7 @@ export interface Decks {
   hotseat: string[];
 }
 export interface GameResults {
+  receipts: Record<string, number[]>;           // card index -> islanders the group pointed at
   canceled: Record<string, number[]>;           // card index -> islander indexes who got "canceled"
   exposed: Record<string, number[]>;            // card index -> islander indexes who put a finger down
   redflag: Record<string, "red" | "ok">;        // card index -> verdict
@@ -46,6 +47,8 @@ export interface PresState {
   res: GameResults;
   hot: HotSeat;      // surprise Hot Seat overlay (works on top of any scene)
   finale: number;    // 0 candles lit · 1 blown out
+  pv: boolean;       // phone voting on/off for game rounds
+  votes: Record<string, Record<string, string | number>>; // "round:card" -> voter index -> choice
 }
 export type Command =
   | { type: "next" } | { type: "prev" }
@@ -58,7 +61,9 @@ export type Command =
   | { type: "gnext" } | { type: "gprev" }
   | { type: "mark"; who: number } | { type: "verdict"; v: "red" | "ok" }
   | { type: "hotStart"; who: number; q: number } | { type: "hotEnd" }
-  | { type: "finale"; stage: number };
+  | { type: "finale"; stage: number }
+  | { type: "pv"; on: boolean }
+  | { type: "vote"; voter: number; choice: string | number };
 export interface RoomView {
   code: string;
   demo: boolean;
