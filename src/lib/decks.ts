@@ -61,7 +61,7 @@ export const defaultDecks = (): Decks => ({
 });
 
 export const GAME_META = {
-  receipts: { icon: "🧾", title: "The Villa Has Receipts", hue: "#19c3dc", word: "POINT!", labels: ["Start 3-2-1", "Print the receipt", "Next card"] },
+  receipts: { icon: "🧾", title: "The Villa Has Receipts", hue: "#19c3dc", word: "POINT!", labels: ["Start 3-2-1", "Reveal the fake", "Next person"] },
   canceled: { icon: "🚫", title: "Most Likely to Get Canceled", hue: "#ff2d95", word: "POINT!", labels: ["Start 3-2-1", "Announce verdict", "Next card"] },
   redflag: { icon: "🚩", title: "Red Flag or Just a Personality?", hue: "#ff5a3c", word: "VOTE!", labels: ["Start vote", "Show verdict", "Next card"] },
   exposed: { icon: "🤫", title: "Never Have I Ever: Exposed", hue: "#ffb02e", word: "FINGERS DOWN!", labels: ["Fingers down!", "Show the damage", "Next card"] },
@@ -70,13 +70,13 @@ export const GAME_META = {
 /** Text for each round's intro screen: what it is and how to play. `pv` = phone voting is on. */
 export const GAME_INTRO: Record<GameKey, { tagline: string; what: string; how: (pv: boolean) => string[] }> = {
   receipts: {
-    tagline: "The group has opinions. We brought receipts.",
-    what: "A question about the group is printed on a receipt. Everyone decides who it describes best, and the most-picked person gets the receipt stamped. No hiding.",
+    tagline: "One true. One fake. Spot the liar.",
+    what: "Everyone secretly sends in one TRUE and one FAKE statement about themselves. We show each person's two receipts, and the villa votes on which one is fake.",
     how: (pv) => [
-      "A question appears on a receipt on the TV.",
-      pv ? "When the host opens voting, pick who it fits best on your phone." : "When the host says go, everyone points at who it fits on 3-2-1.",
-      "You can't pick yourself. Be honest. Be dramatic.",
-      "The most-picked person gets the receipt. Defend yourself out loud!",
+      "Scan the QR code, pick who you are, and send one TRUE and one FAKE statement about yourself.",
+      "We reveal each person's two receipts, A and B, in random order.",
+      pv ? "Vote on your phone: which one is FAKE?" : "Everyone points or shouts: which one is FAKE?",
+      "The fake gets stamped. Fool the room, or catch the liars. Best of both gets an award!",
     ],
   },
   canceled: {

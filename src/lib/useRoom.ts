@@ -11,6 +11,8 @@ export interface RoomData { code: string; demo: boolean; state: PresState; cast:
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SB_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 export const realtimeMode = SB_URL && SB_ANON ? "supabase" : "sse";
+let sbClient: ReturnType<typeof createClient> | null = null; // one shared client (avoids duplicate-auth warnings)
+const getSb = () => (sbClient ??= createClient(SB_URL!, SB_ANON!, { auth: { persistSession: false, autoRefreshToken: false } }));
 
 export const tokenKey = (code: string) => `niha:token:${code}`;
 export const getToken = (code: string) => { try { return localStorage.getItem(tokenKey(code)); } catch { return null; } };
@@ -59,7 +61,7 @@ export function useRoom(code: string | null) {
     window.addEventListener("online", refresh);
     let cleanup = () => {};
     if (realtimeMode === "supabase") {
-      const sb = createClient(SB_URL!, SB_ANON!);
+      const sb = getSb();
       const ch = sb.channel(`niha-room-${code}`)
         .on("broadcast", { event: "ping" }, () => refresh())
         .subscribe((s) => { setPush(s === "SUBSCRIBED"); if (s === "SUBSCRIBED") refresh(); });

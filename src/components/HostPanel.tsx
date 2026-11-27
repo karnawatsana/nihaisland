@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRoom, type Status } from "@/lib/useRoom";
 import { CAST_SIZE, ROUNDS, STEP, STEPS, introStep, stepLabel } from "@/lib/sequence";
 import { GAME_META } from "@/lib/decks";
+import { authorsOf } from "@/lib/receipts";
 import type { Command } from "@/lib/types";
 
 const dot: Record<Status, string> = { live: "bg-emerald-400", connecting: "bg-amber-400", offline: "bg-red-500", missing: "bg-red-500" };
@@ -46,6 +47,11 @@ export function HostPanel({ code, onLogout, compact = false }: { code: string; o
           <div className="text-[11px] font-semibold uppercase tracking-[.25em] text-gold">{GAME_META[step.id].icon} Intro · explain the rules</div>
           <p className="mt-2 text-sm text-white/90">The TV is showing how this round works. Read it out, then start the game.</p>
           <button onClick={() => { buzz(); run({ type: "pv", on: !state.pv }); }} className={`mt-3 w-full rounded-xl py-2.5 text-sm font-extrabold ${state.pv ? "bg-emerald-500" : "bg-white/20"}`}>📱 Phone voting: {state.pv ? "ON" : "OFF"}</button>
+          {step.id === "receipts" && (() => {
+            const ppl = [...cast.slice(0, CAST_SIZE), ...(data.poster.host ? [data.poster.host] : [])];
+            const have = Object.keys(state.subs).length; const missing = ppl.filter((_, i) => !state.subs[String(i)]);
+            return <div className="mt-3 rounded-2xl bg-black/25 p-3 text-sm" data-testid="subs-status"><b>🧾 {have} / {ppl.length} sent their statements</b>{missing.length > 0 && have > 0 ? <div className="mt-1 text-xs text-white/80">Waiting on: {missing.map((m) => m.firstName.replace(/[\[\]]/g, "")).join(", ")}</div> : null}<div className="mt-1 text-xs text-white/75">The QR on the TV lets everyone send theirs. You can start anytime — only people who sent get a card.</div></div>;
+          })()}
           {state.pv && <p className="mt-2 text-xs text-white/80">The QR is on the TV — let everyone scan &amp; pick their name <b>before</b> you start.</p>}
           <button onClick={() => { buzz(); run({ type: "next" }); }} className="mt-3 w-full rounded-2xl bg-gradient-to-br from-hot to-[#d4106f] py-5 text-lg font-extrabold shadow-lg shadow-hot/40 active:scale-[.97]">START THE GAME ▶</button>
         </div>
@@ -53,7 +59,9 @@ export function HostPanel({ code, onLogout, compact = false }: { code: string; o
 
       {step.kind === "round" && (() => {
         const id = step.id; const meta = GAME_META[id];
-        const list: string[] = id === "receipts" ? data.decks.receipts.map((r) => r.q) : data.decks[id];
+        const ppl = [...cast.slice(0, CAST_SIZE), ...(data.poster.host ? [data.poster.host] : [])];
+        const authors = authorsOf(state.subs);
+        const list: string[] = id === "receipts" ? authors.map((a) => `${(ppl[a]?.firstName ?? "?").replace(/[\[\]]/g, "")}: A) ${state.subs[String(a)].a}  ·  B) ${state.subs[String(a)].b}`) : data.decks[id];
         const idx = Math.min(state.card, Math.max(list.length - 1, 0));
         const last = idx >= list.length - 1 && state.beat >= 2;
         const picks = id === "canceled" || id === "exposed" ? state.res[id][String(idx)] ?? [] : [];

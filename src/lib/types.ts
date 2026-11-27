@@ -49,6 +49,8 @@ export interface PresState {
   finale: number;    // 0 candles lit · 1 blown out
   pv: boolean;       // phone voting on/off for game rounds
   votes: Record<string, Record<string, string | number>>; // "round:card" -> voter index -> choice
+  subs: Record<string, { a: string; b: string; fake?: "A" | "B" }>; // guest statements for Receipts (fake is hidden from clients until revealed)
+  rev: number[];     // authors whose receipt card has been revealed
 }
 export type Command =
   | { type: "next" } | { type: "prev" }
@@ -63,6 +65,7 @@ export type Command =
   | { type: "hotStart"; who: number; q: number } | { type: "hotEnd" }
   | { type: "finale"; stage: number }
   | { type: "pv"; on: boolean }
+  | { type: "submit"; voter: number; t: string; f: string; flip?: boolean }
   | { type: "vote"; voter: number; choice: string | number };
 export interface RoomView {
   code: string;

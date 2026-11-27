@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { Avatar } from "@/components/games";
 import { Shell } from "@/components/Shell";
 import { GAME_META } from "@/lib/decks";
-import { STEPS } from "@/lib/sequence";
+import { STEPS, gameStep } from "@/lib/sequence";
+import { authorsOf, type Sub } from "@/lib/receipts";
 import { useRoom } from "@/lib/useRoom";
 import type { Islander } from "@/lib/types";
 
@@ -63,9 +64,34 @@ function Voter({ code, me, setMe }: { code: string; me: number | null; setMe: (i
   let body: React.ReactNode;
   if (step.kind !== "round" || !state.pv) {
     body = <Wait emoji="🌴" title={step.kind === "round" ? "Phone voting is off for this round" : "Waiting for the next round…"} sub="Keep this page open — it updates by itself." />;
+  } else if (step.id === "receipts") {
+    const authors = authorsOf(state.subs); const idx = Math.min(state.card, Math.max(authors.length - 1, 0));
+    const author = authors[idx]; const sub = state.subs[String(author)]; const authorP = people[author];
+    const key = `receipts:${idx}`; const myVote = state.votes[key]?.[String(me)];
+    const castAB = async (c: "A" | "B") => { buzz(); setErr(""); const e = await send({ type: "vote", voter: me, choice: c }); if (e) setErr(e); };
+    if (!sub || !authorP) body = <Wait emoji="🧾" title="No statements yet" sub="Waiting for everyone to send theirs." />;
+    else {
+      const card = (
+        <div className="rounded-3xl bg-[#04283e]/60 p-5 ring-1 ring-white/25 backdrop-blur">
+          <div className="text-[11px] font-semibold uppercase tracking-[.25em] text-gold">🧾 {name(authorP)}&apos;s receipts · {idx + 1}/{authors.length}</div>
+          <div className="mt-2 rounded-xl bg-[#fffdf5] p-3 text-[#1b1b1b]"><b>A</b> · {sub.a}</div>
+          <div className="mt-2 rounded-xl bg-[#fffdf5] p-3 text-[#1b1b1b]"><b>B</b> · {sub.b}</div>
+        </div>
+      );
+      if (author === me) body = <>{card}<Wait emoji="😶" title="It's YOUR receipt" sub="Poker face. Say nothing. Let them guess." /></>;
+      else if (state.beat === 0) body = <>{card}<Wait emoji="⏳" title="Get ready…" sub="Read both carefully. Voting opens soon." /></>;
+      else if (state.beat >= 2) body = <>{card}<Wait emoji="📺" title="Eyes on the TV!" sub={myVote === undefined ? "You didn't vote on this one." : `You said ${myVote} was fake${sub.fake ? (myVote === sub.fake ? " — you caught it! 🕵️" : " — fooled! 😈") : ""}`} /></>;
+      else body = (
+        <>{card}<div className="text-center text-sm font-bold uppercase tracking-[.25em] text-gold">{myVote === undefined ? "Which one is FAKE?" : "Voted ✓ — you can change it"}</div>
+          <div className="grid gap-3">
+            <button onClick={() => castAB("A")} className={`rounded-3xl py-7 text-2xl font-extrabold active:scale-95 ${myVote === "A" ? "bg-red-500 ring-4 ring-white" : "bg-red-500/60"}`}>A is FAKE</button>
+            <button onClick={() => castAB("B")} className={`rounded-3xl py-7 text-2xl font-extrabold active:scale-95 ${myVote === "B" ? "bg-red-500 ring-4 ring-white" : "bg-red-500/60"}`}>B is FAKE</button>
+          </div></>
+      );
+    }
   } else {
     const id = step.id; const meta = GAME_META[id];
-    const list: string[] = id === "receipts" ? data.decks.receipts.map((r) => r.q) : data.decks[id];
+    const list: string[] = data.decks[id];
     const idx = Math.min(state.card, Math.max(list.length - 1, 0));
     const prompt = list[idx] ?? ""; const key = `${id}:${idx}`;
     const myVote = state.votes[key]?.[String(me)];
@@ -74,7 +100,7 @@ function Voter({ code, me, setMe }: { code: string; me: number | null; setMe: (i
       const e = await send({ type: "vote", voter: me, choice });
       if (e) setErr(e);
     };
-    const prefix = id === "canceled" ? "Most likely to get canceled for…" : id === "exposed" ? "Never have I ever…" : id === "redflag" ? "Red flag — or just a personality?" : "Who…";
+    const prefix = id === "canceled" ? "Most likely to get canceled for…" : id === "exposed" ? "Never have I ever…" : "Red flag — or just a personality?";
     const card = (
       <div className="rounded-3xl bg-[#04283e]/60 p-5 ring-1 ring-white/25 backdrop-blur">
         <div className="text-[11px] font-semibold uppercase tracking-[.25em] text-gold">{meta.icon} {meta.title}</div>
@@ -88,7 +114,7 @@ function Voter({ code, me, setMe }: { code: string; me: number | null; setMe: (i
       <>
         {card}
         <div className="mt-1 text-center text-sm font-bold uppercase tracking-[.25em] text-gold">{myVote === undefined ? "Cast your vote!" : "Voted ✓ — you can change it"}</div>
-        {(id === "canceled" || id === "receipts") && (
+        {id === "canceled" && (
           <div className="grid grid-cols-2 gap-3">
             {people.slice(0, 8).map((c, i) => i === me ? null : (
               <button key={c.id} onClick={() => cast(i)} className={`flex items-center gap-3 rounded-2xl p-3 text-left font-bold active:scale-95 ${myVote === i ? "bg-hot ring-2 ring-white" : "bg-white/15 ring-1 ring-white/30"}`}><Avatar c={c} size={44} /><span className="truncate">{name(c)}</span></button>
@@ -112,9 +138,28 @@ function Voter({ code, me, setMe }: { code: string; me: number | null; setMe: (i
   }
   return (
     <div className="mx-auto max-w-md space-y-4 px-4 pb-10 pt-4" data-testid="vote-page">
-      {header}{body}
+      {header}{state.step < gameStep("receipts") && <SubmitCard me={me} mine={state.subs[String(me)]} send={send} />}{body}
       {err && <div role="alert" className="rounded-xl bg-red-500/90 px-3 py-2 text-sm font-semibold">{err}</div>}
       {status !== "live" && <div className="text-center text-xs font-bold text-amber-300">Reconnecting…</div>}
+    </div>
+  );
+}
+
+function SubmitCard({ me, mine, send }: { me: number; mine?: Sub; send: (c: import("@/lib/types").Command) => Promise<string | null> }) {
+  const [t, setT] = useState(""); const [f, setF] = useState(""); const [busy, setBusy] = useState(false); const [err, setErr] = useState("");
+  const field = "mt-1 w-full rounded-xl border border-white/40 bg-[#04283e]/60 px-3 py-3 text-base outline-none placeholder:text-white/40 focus:border-gold";
+  return (
+    <div className="rounded-3xl border border-gold/60 bg-[#04283e]/60 p-5 backdrop-blur" data-testid="submit-card">
+      <div className="text-[11px] font-semibold uppercase tracking-[.25em] text-gold">🧾 The Villa Has Receipts</div>
+      <div className="mt-1 text-xl font-extrabold leading-snug">Send in one TRUE and one FAKE statement about yourself</div>
+      <p className="mt-1 text-sm text-white/80">Keep it believable! The group will guess which one is fake. Short and juicy works best.</p>
+      <label className="mt-3 block text-xs font-bold uppercase tracking-[.2em] text-emerald-300">✅ Something TRUE about you</label>
+      <input value={t} onChange={(e) => setT(e.target.value)} maxLength={140} placeholder="e.g. I've never seen Titanic" className={field} aria-label="True statement" />
+      <label className="mt-3 block text-xs font-bold uppercase tracking-[.2em] text-red-300">❌ Something FAKE about you</label>
+      <input value={f} onChange={(e) => setF(e.target.value)} maxLength={140} placeholder="e.g. I once met a celebrity" className={field} aria-label="Fake statement" />
+      {err && <div role="alert" className="mt-3 rounded-lg bg-red-500/90 px-3 py-2 text-sm font-semibold">{err}</div>}
+      <button disabled={busy || !t.trim() || !f.trim()} onClick={async () => { setBusy(true); setErr(""); const e = await send({ type: "submit", voter: me, t, f }); setBusy(false); if (e) setErr(e); }} className="mt-4 w-full rounded-2xl bg-gradient-to-br from-hot to-[#d4106f] py-4 text-lg font-extrabold disabled:opacity-40 active:scale-[.97]">{mine ? "Update my statements" : "Send my statements"}</button>
+      {mine && <p className="mt-2 text-center text-sm font-bold text-emerald-300">✓ Sent! You can change them until the game starts.</p>}
     </div>
   );
 }

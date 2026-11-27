@@ -11,6 +11,11 @@ import { Sky, Sparkles } from "./Sky";
 import { Silhouette } from "./Silhouette";
 import { Confetti } from "./Bombshell";
 import { Portrait } from "./CastReveal";
+import { authorsOf, receiptStats, type Sub } from "@/lib/receipts";
+
+const ZIG = "polygon(0 0,100% 0,100% calc(100% - 22px),96% 100%,92% calc(100% - 22px),88% 100%,84% calc(100% - 22px),80% 100%,76% calc(100% - 22px),72% 100%,68% calc(100% - 22px),64% 100%,60% calc(100% - 22px),56% 100%,52% calc(100% - 22px),48% 100%,44% calc(100% - 22px),40% 100%,36% calc(100% - 22px),32% 100%,28% calc(100% - 22px),24% 100%,20% calc(100% - 22px),16% 100%,12% calc(100% - 22px),8% 100%,4% calc(100% - 22px),0 100%)";
+export const peopleOf = (data: RoomData): Islander[] => [...data.cast.slice(0, CAST_SIZE), ...(data.poster.host ? [data.poster.host] : [])];
+const nm = (c: Islander) => c.firstName.replace(/[\[\]]/g, "");
 
 export function Avatar({ c, size, ring = false, badge, count, tag }: { c: Islander; size: number; ring?: boolean; badge?: string; count?: number; tag?: string }) {
   return (
@@ -83,16 +88,22 @@ export function GameScreen({ id, data }: { id: GameKey; data: RoomData }) {
   const { state, decks, cast } = data;
   const meta = GAME_META[id];
   const n = ROUNDS.find((r) => r.id === id)!.n;
-  const list: string[] = id === "receipts" ? decks.receipts.map((r) => r.q) : decks[id];
+  const subs = state.subs as Record<string, Sub>;
+  const authors = authorsOf(subs);
+  const people = peopleOf(data);
+  const list: string[] = id === "receipts" ? authors.map((a) => nm(people[a] ?? people[0])) : decks[id];
   const total = list.length;
   const idx = Math.min(state.card, Math.max(total - 1, 0));
-  const prompt = list[idx] ?? "(this deck is empty — add cards in /setup → Games)";
+  const author = id === "receipts" ? authors[idx] : undefined;
+  const sub = author !== undefined ? subs[String(author)] : undefined;
+  const authorP = author !== undefined ? people[author] : undefined;
+  const prompt = id === "receipts" ? (authorP ? `Which of ${nm(authorP)}'s statements is FAKE?` : "No statements yet — everyone scan the QR and send yours!") : decks[id][idx] ?? "(this deck is empty — add cards in /setup → Games)";
   const picks = id === "canceled" || id === "exposed" ? state.res[id][String(idx)] ?? [] : [];
   const verdict = id === "redflag" ? state.res.redflag[String(idx)] : undefined;
   const islanders = cast.slice(0, CAST_SIZE);
   const beat = state.beat;
   const votesKey = `${id}:${idx}`; const cardVotes = state.votes[votesKey] ?? {};
-  const voted = Object.keys(cardVotes).length; const voters = islanders.length + (data.poster.host ? 1 : 0);
+  const voted = Object.keys(cardVotes).length; const voters = people.length;
   const voteCount = (who: number) => Object.values(cardVotes).filter((x) => x === who).length;
   const qrSmall = useVoteQr(data.code, 200);
   const runKey = `${state.introKey}-${idx}-${beat}`;
@@ -113,15 +124,32 @@ export function GameScreen({ id, data }: { id: GameKey; data: RoomData }) {
       {/* card */}
       <AnimatePresence mode="wait">
         <motion.div key={`c${state.introKey}-${idx}`} initial={{ opacity: 0, y: 80, rotateX: -25, scale: 0.92 }} animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }} exit={{ opacity: 0, y: -60 }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          style={{ position: "absolute", left: 210, top: id === "receipts" ? 230 : 230, width: 1500, perspective: 1200 }}>
+          style={{ position: "absolute", left: 210, top: id === "receipts" ? 175 : 230, width: 1500, perspective: 1200 }}>
           {id === "receipts" ? (
-            <div style={{ background: "#fffdf5", color: "#1b1b1b", padding: "46px 80px 90px", fontFamily: "ui-monospace, Menlo, Consolas, monospace", clipPath: "polygon(0 0,100% 0,100% calc(100% - 28px),97% 100%,94% calc(100% - 28px),91% 100%,88% calc(100% - 28px),85% 100%,82% calc(100% - 28px),79% 100%,76% calc(100% - 28px),73% 100%,70% calc(100% - 28px),67% 100%,64% calc(100% - 28px),61% 100%,58% calc(100% - 28px),55% 100%,52% calc(100% - 28px),49% 100%,46% calc(100% - 28px),43% 100%,40% calc(100% - 28px),37% 100%,34% calc(100% - 28px),31% 100%,28% calc(100% - 28px),25% 100%,22% calc(100% - 28px),19% 100%,16% calc(100% - 28px),13% 100%,10% calc(100% - 28px),7% 100%,4% calc(100% - 28px),1% 100%,0 calc(100% - 28px))", filter: "drop-shadow(0 20px 40px rgba(0,30,50,.4))" }}>
-              <div style={{ textAlign: "center", fontSize: 30, letterSpacing: "0.3em", fontWeight: 700 }}>★ NIHA ISLAND VILLA ★</div>
-              <div style={{ textAlign: "center", fontSize: 26, letterSpacing: "0.2em", marginTop: 6 }}>OFFICIAL RECEIPT · ITEM #{String(idx + 1).padStart(2, "0")}</div>
-              <div style={{ borderTop: "4px dashed #1b1b1b", margin: "24px 0" }} />
-              <div style={{ fontSize: 76, fontWeight: 800, lineHeight: 1.12, fontFamily: "'Outfit Variable', sans-serif", letterSpacing: "-0.02em" }}>{prompt}</div>
-              <div style={{ borderTop: "4px dashed #1b1b1b", margin: "24px 0 14px" }} />
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 28, fontWeight: 700 }}><span>TOTAL DAMAGE</span><span>{beat >= 2 ? "PAID IN FULL ✓" : "PENDING…"}</span></div>
+            <div>
+              {authorP ? (
+                <>
+                  <div style={{ display: "flex", alignItems: "center", gap: 30, marginBottom: 26 }}>
+                    <Avatar c={authorP} size={120} ring />
+                    <div><div style={{ fontSize: 76, fontWeight: 800, letterSpacing: "-0.03em", textShadow: "0 6px 24px rgba(0,30,50,.5)", lineHeight: 1 }}>{nm(authorP)}&apos;s receipts</div><div style={{ marginTop: 8, fontSize: 34, fontWeight: 700, letterSpacing: "0.3em", color: "#ffe39a" }}>ONE IS TRUE · ONE IS FAKE · SPOT THE FAKE</div></div>
+                  </div>
+                  <div style={{ display: "flex", gap: 40 }}>
+                    {(["A", "B"] as const).map((L) => {
+                      const text = L === "A" ? sub?.a : sub?.b; const rev = beat >= 2 && sub?.fake; const isFake = rev && sub?.fake === L;
+                      return (
+                        <motion.div key={L} initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + (L === "B" ? 0.3 : 0), duration: 0.8 }} style={{ position: "relative", width: 730 }}>
+                          <div style={{ background: "#fffdf5", color: "#1b1b1b", padding: "30px 46px 66px", fontFamily: "ui-monospace, Menlo, Consolas, monospace", clipPath: ZIG, minHeight: 300, filter: "drop-shadow(0 20px 40px rgba(0,30,50,.4))", opacity: rev ? (isFake ? 0.85 : 1) : 1 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 26, letterSpacing: "0.2em", fontWeight: 700 }}><span>RECEIPT {L}</span><span>★ NIHA ISLAND ★</span></div>
+                            <div style={{ borderTop: "4px dashed #1b1b1b", margin: "16px 0 20px" }} />
+                            <div style={{ fontSize: 50, fontWeight: 800, lineHeight: 1.15, fontFamily: "'Outfit Variable', sans-serif", textDecoration: isFake ? "line-through" : undefined, textDecorationColor: "#e0221c", textDecorationThickness: 6 }}>{text}</div>
+                          </div>
+                          {rev && <div style={{ position: "absolute", right: 24, bottom: -34 }}><Stamp text={isFake ? "FAKE" : "TRUE"} color={isFake ? "#e0221c" : "#0a9f6b"} size={64} /></div>}
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : <div className="glass" style={{ borderRadius: 48, padding: "60px 80px", background: "rgba(3,40,66,.55)", fontSize: 70, fontWeight: 800, textAlign: "center" }}>{prompt}</div>}
             </div>
           ) : (
             <div className="glass" style={{ borderRadius: 48, padding: "54px 80px", background: "rgba(3,40,66,.55)", borderColor: `${meta.hue}cc`, boxShadow: `0 0 80px ${meta.hue}66, 0 30px 60px rgba(0,30,50,.4)` }}>
@@ -134,8 +162,11 @@ export function GameScreen({ id, data }: { id: GameKey; data: RoomData }) {
 
       {/* result stamps */}
       {beat >= 2 && (
-        <div style={{ position: "absolute", left: 0, right: 0, top: id === "receipts" ? 760 : 650, display: "flex", flexDirection: id === "canceled" ? "row" : "column", justifyContent: "center", alignItems: "center", gap: id === "canceled" ? 44 : 20, zIndex: 3 }}>
-          {id === "receipts" && <>{(state.res.receipts[String(idx)] ?? []).length > 0 && <div style={{ display: "flex", gap: 24 }}>{(state.res.receipts[String(idx)] ?? []).map((w) => <Avatar key={w} c={islanders[w]} size={130} ring tag={state.pv && voted ? `${voteCount(w)} vote${voteCount(w) === 1 ? "" : "s"}` : undefined} />)}</div>}<Stamp text="Receipt printed" color="#0a9f6b" />{(decks.receipts[idx]?.reveal || "") && <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} style={{ fontSize: 46, fontWeight: 700, background: "rgba(3,40,66,.7)", borderRadius: 24, padding: "14px 40px", maxWidth: 1500, textAlign: "center" }}>{decks.receipts[idx].reveal}</motion.div>}</>}
+        <div style={{ position: "absolute", left: 0, right: 0, top: id === "receipts" ? 870 : 650, display: "flex", flexDirection: id === "canceled" ? "row" : "column", justifyContent: "center", alignItems: "center", gap: id === "canceled" ? 44 : 20, zIndex: 3 }}>
+          {id === "receipts" && sub?.fake && authorP && (() => {
+            const vs = Object.entries(cardVotes); const caught = vs.filter(([, c]) => c === sub.fake).length; const fooled = vs.length - caught;
+            return vs.length ? <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }} style={{ fontSize: 46, fontWeight: 700, background: "rgba(3,40,66,.75)", borderRadius: 99, padding: "10px 44px" }}>🕵️ {caught} caught it &nbsp;·&nbsp; 😈 {nm(authorP)} fooled {fooled}</motion.div> : null;
+          })()}
           {id === "canceled" && (picks.length ? <><div style={{ display: "flex", gap: 24 }}>{picks.map((w) => <Avatar key={w} c={islanders[w]} size={150} ring />)}</div><Stamp text={`${picks.map((w) => islanders[w].firstName.replace(/[\[\]]/g, "")).join(" & ")} — canceled`} color="#e0127c" size={64} rot={-3} /></> : <Stamp text="Nobody. This time." color="#06344d" size={70} rot={-3} />)}
           {id === "redflag" && state.pv && voted > 0 && <div style={{ fontSize: 44, fontWeight: 800, background: "rgba(3,40,66,.7)", borderRadius: 99, padding: "6px 36px" }}>🚩 {Object.values(cardVotes).filter((x) => x === "red").length} &nbsp;·&nbsp; ✅ {Object.values(cardVotes).filter((x) => x === "ok").length}</div>}
           {id === "redflag" && (verdict === "red" ? <Stamp text="🚩 Red flag" color="#e0221c" size={110} /> : verdict === "ok" ? <Stamp text="✅ Just a personality" color="#0a9f6b" size={90} /> : <Stamp text="Hung jury" color="#06344d" size={90} />)}
@@ -216,10 +247,13 @@ function Fireworks() {
 export function FinaleScreen({ data }: { data: RoomData }) {
   const { state, cast } = data; const stage = state.finale;
   const niha = cast[CAST_SIZE - 1];
-  const nm = niha.firstName.replace(/[\[\]]/g, "");
+  const nihaName = niha.firstName.replace(/[\[\]]/g, "");
   const canceledTop = topOf(state.res.canceled, cast);
   const exposedTop = topOf(state.res.exposed, cast);
   const reds = Object.values(state.res.redflag).filter((v) => v === "red").length;
+  const people = peopleOf(data); const rs = receiptStats(state);
+  const top = (m: Record<number, number>) => { const e = Object.entries(m).sort((a, b) => b[1] - a[1]); if (!e.length) return null; const names = e.filter((x) => x[1] === e[0][1]).map((x) => (people[+x[0]] ? nm(people[+x[0]]) : "")).filter(Boolean); return `${names.join(" & ")} (${e[0][1]})`; };
+  const liar = top(rs.fooled), detective = top(rs.caught);
   return (
     <div className="stage-layer" key={state.introKey}>
       <Sky dim={stage ? 0 : 0.35} palms={false} sunX={960} tint="radial-gradient(circle at 50% 40%, rgba(255,45,149,.45), transparent 65%)" />
@@ -230,11 +264,13 @@ export function FinaleScreen({ data }: { data: RoomData }) {
         <motion.div key={`t${stage}`} initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }}>
           <div style={{ fontSize: 34, fontWeight: 700, letterSpacing: "0.55em", textShadow: "0 2px 14px rgba(0,50,80,.7)" }}>{stage ? "★ MAKE IT COUNT ★" : "NIHA ISLAND · THE FINALE"}</div>
           <div className="gold-text" style={{ fontSize: stage ? 150 : 150, fontWeight: 800, lineHeight: 0.95, letterSpacing: "-0.04em", marginTop: 10 }}>{stage ? "happy birthday" : "make a wish"}</div>
-          <div className="title-pink" style={{ fontSize: stage ? 215 : 260, fontWeight: 800, lineHeight: 0.95, letterSpacing: "-0.05em", marginTop: stage ? 0 : 18 }}>{nm.toLowerCase()}</div>
+          <div className="title-pink" style={{ fontSize: stage ? 215 : 260, fontWeight: 800, lineHeight: 0.95, letterSpacing: "-0.05em", marginTop: stage ? 0 : 18 }}>{nihaName.toLowerCase()}</div>
         </motion.div>
-        {stage === 1 && (canceledTop || exposedTop || reds > 0) && (
+        {stage === 1 && (canceledTop || exposedTop || reds > 0 || liar || detective) && (
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.8, duration: 1 }} className="glass" style={{ marginTop: 24, borderRadius: 32, padding: "20px 36px", background: "rgba(3,40,66,.55)", fontSize: 32, fontWeight: 600, lineHeight: 1.45 }}>
             <div style={{ fontSize: 26, letterSpacing: "0.4em", color: "#ffe39a", fontWeight: 700 }}>VILLA AWARDS</div>
+            {liar && <div>😈 Best liar: <b>{liar}</b> fooled</div>}
+            {detective && <div>🕵️ Sharpest detective: <b>{detective}</b> caught</div>}
             {canceledTop && <div>🚫 Most canceled: <b>{canceledTop}</b></div>}
             {exposedTop && <div>🤫 Most exposed: <b>{exposedTop}</b></div>}
             {reds > 0 && <div>🚩 Red flags called tonight: <b>{reds}</b></div>}
@@ -258,6 +294,7 @@ export function RoundIntro({ id, data }: { id: GameKey; data: RoomData }) {
   const meta = GAME_META[id]; const info = GAME_INTRO[id];
   const n = ROUNDS.find((r) => r.id === id)!.n; const pv = data.state.pv;
   const qr = useVoteQr(data.code, 240);
+  const collect = id === "receipts"; const have = Object.keys(data.state.subs).length; const need = peopleOf(data).length;
   return (
     <div className="stage-layer" key={data.state.introKey}>
       <Sky dim={0.3} palms={false} sunX={960} tint={`radial-gradient(circle at 30% 45%, ${meta.hue}77, transparent 62%)`} />
@@ -282,11 +319,11 @@ export function RoundIntro({ id, data }: { id: GameKey; data: RoomData }) {
           ))}
         </div>
       </motion.div>
-      {pv && qr && (
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2.6, duration: 0.8 }} className="glass" style={{ position: "absolute", right: 90, bottom: 56, borderRadius: 32, padding: "16px 30px 16px 16px", display: "flex", alignItems: "center", gap: 26, background: "rgba(3,40,66,.7)" }}>
+      {(pv || collect) && qr && (
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: collect ? 1.6 : 2.6, duration: 0.8 }} className="glass" style={{ position: "absolute", right: 90, bottom: collect ? 60 : 56, borderRadius: 32, padding: "16px 30px 16px 16px", display: "flex", alignItems: "center", gap: 26, background: "rgba(3,40,66,.7)" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={qr} width={150} height={150} alt="Scan to join voting" style={{ background: "#fff", padding: 8, borderRadius: 18 }} />
-          <div style={{ fontSize: 32, fontWeight: 700, lineHeight: 1.25, width: 360 }}>📱 Scan now &amp; pick who you are — voting happens on your phone</div>
+          <div style={{ fontSize: 32, fontWeight: 700, lineHeight: 1.25, width: 360 }}>{collect ? <>📱 Scan &amp; send your <b>1 true + 1 fake</b><div style={{ marginTop: 10, fontSize: 40, fontWeight: 800, color: "#ffe39a" }}>{have} / {need} sent</div></> : <>📱 Scan now &amp; pick who you are — voting happens on your phone</>}</div>
         </motion.div>
       )}
     </div>

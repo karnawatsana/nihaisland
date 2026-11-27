@@ -170,13 +170,11 @@ function Editor({ code, onLogout }: { code: string; onLogout: () => void }) {
         );
         return (
           <div className="mt-4">
-            <p className="max-w-3xl rounded-xl bg-black/25 px-4 py-3 text-sm">One card per line, in the order they&apos;ll appear. The starter cards are generic and silly — swap in your real inside jokes! The <b>Receipts</b> reveal text is optional (shown after the stamp).</p>
+            <p className="max-w-3xl rounded-xl bg-black/25 px-4 py-3 text-sm">One card per line, in the order they&apos;ll appear. The starter cards are generic and silly — swap in your real inside jokes!</p>
             <div className="mt-4 grid gap-4 lg:grid-cols-2">
               <div className="rounded-3xl border border-white/30 bg-[#04283e]/55 p-4 backdrop-blur">
                 <div className="text-sm font-extrabold uppercase tracking-[.15em]">{GAME_META.receipts.icon} {GAME_META.receipts.title}</div>
-                <p className="mt-1 text-xs text-white/80">Format: <code>question || optional reveal text</code> · {decks.receipts.filter((x) => x.q.trim()).length} cards</p>
-                <textarea aria-label="Receipts deck" rows={9} className={`${input} mt-2 font-mono text-sm`} value={decks.receipts.map((r) => (r.reveal ? `${r.q} || ${r.reveal}` : r.q)).join("\n")}
-                  onChange={(e) => setDeck({ receipts: e.target.value.split("\n").map((l) => { const [q, ...rest] = l.split("||"); return { q, reveal: rest.join("||").trim() }; }) })} />
+                <p className="mt-2 text-sm text-white/85">Round 1 has no deck to edit: it&apos;s built live from what the guests send in (one true + one fake statement each). On the night, everyone scans the QR shown on the TV during the round 1 intro.</p>
               </div>
               {ta("canceled", `${GAME_META.canceled.icon} Most likely to get canceled for…`, "Finish the sentence: “Most likely to get canceled for …”")}
               {ta("redflag", `${GAME_META.redflag.icon} Red flag or just a personality?`, "A quirk or habit to judge")}
