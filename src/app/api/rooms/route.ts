@@ -2,6 +2,7 @@ import { createRoom, getRoom, newCode } from "@/server/store";
 import { hashPin, makeToken, newSalt } from "@/server/auth";
 import { json } from "@/server/view";
 import { demoCast, demoHost, partyCast, partyHost, defaultPoster } from "@/lib/cast";
+import { partyDecks } from "@/lib/decks";
 import { initialState } from "@/lib/reducer";
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ export async function POST(req: Request) {
   const now = Date.now();
   await createRoom({
     code, demo, pinHash, salt, version: 1, contentVersion: 1, updatedAt: now,
-    state: initialState(now), cast: demo ? demoCast() : partyCast(), poster: defaultPoster(demo ? demoHost() : partyHost()),
+    state: initialState(now), cast: demo ? demoCast() : partyCast(), poster: { ...defaultPoster(demo ? demoHost() : partyHost()), ...(demo ? {} : { decks: partyDecks() }) },
   });
   return json({ code, token: makeToken(code, pinHash), demo });
 }
