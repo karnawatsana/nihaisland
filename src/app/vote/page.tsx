@@ -62,7 +62,9 @@ function Voter({ code, me, setMe }: { code: string; me: number | null; setMe: (i
   );
 
   let body: React.ReactNode;
-  if (step.kind !== "round" || (!state.pv && step.id !== "awards")) {
+  if (step.kind === "round" && step.id === "redflag") {
+    body = <Wait emoji="⏱️" title="5 Second Challenge" sub="Eyes on the TV! No voting this round. Heckling is encouraged." />;
+  } else if (step.kind !== "round" || (!state.pv && step.id !== "awards")) {
     body = <Wait emoji="🌴" title={step.kind === "round" ? "Phone voting is off for this round" : "Waiting for the next round…"} sub="Keep this page open — it updates by itself." />;
   } else if (step.id === "receipts") {
     const authors = authorsOf(state.subs); const idx = Math.min(state.card, Math.max(authors.length - 1, 0));
@@ -100,7 +102,7 @@ function Voter({ code, me, setMe }: { code: string; me: number | null; setMe: (i
       const e = await send({ type: "vote", voter: me, choice });
       if (e) setErr(e);
     };
-    const prefix = id === "awards" ? "The award for…" : id === "canceled" ? "Most likely to get canceled for…" : id === "exposed" ? "Never have I ever…" : "Red flag — or just a personality?";
+    const prefix = id === "awards" ? "The award for…" : id === "canceled" ? "Most likely to get canceled for…" : id === "exposed" ? "Never have I ever…" : "Never have I ever…";
     const card = (
       <div className="rounded-3xl bg-[#04283e]/60 p-5 ring-1 ring-white/25 backdrop-blur">
         <div className="text-[11px] font-semibold uppercase tracking-[.25em] text-gold">{meta.icon} {meta.title}</div>
@@ -109,7 +111,7 @@ function Voter({ code, me, setMe }: { code: string; me: number | null; setMe: (i
       </div>
     );
     if (state.beat === 0) body = <>{card}<Wait emoji="⏳" title="Get ready…" sub="Voting opens when the host starts the round." /></>;
-    else if (state.beat >= 2) body = <>{card}<Wait emoji="📺" title="Eyes on the TV!" sub={myVote === undefined ? "You didn't vote on this one." : `You voted: ${typeof myVote === "number" ? name(people[myVote]) : myVote === "red" ? "🚩 Red flag" : myVote === "ok" ? "✅ Personality" : myVote === "yes" ? "👇 I have" : "✋ Never"}`} /></>;
+    else if (state.beat >= 2) body = <>{card}<Wait emoji="📺" title="Eyes on the TV!" sub={myVote === undefined ? "You didn't vote on this one." : `You voted: ${typeof myVote === "number" ? name(people[myVote]) : myVote === "yes" ? "👇 I have" : "✋ Never"}`} /></>;
     else body = (
       <>
         {card}
@@ -119,12 +121,6 @@ function Voter({ code, me, setMe }: { code: string; me: number | null; setMe: (i
             {(id === "awards" ? people : people.slice(0, 8)).map((c, i) => i === me ? null : (
               <button key={c.id} onClick={() => cast(i)} className={`flex items-center gap-3 rounded-2xl p-3 text-left font-bold active:scale-95 ${myVote === i ? "bg-hot ring-2 ring-white" : "bg-white/15 ring-1 ring-white/30"}`}><Avatar c={c} size={44} /><span className="truncate">{name(c)}</span></button>
             ))}
-          </div>
-        )}
-        {id === "redflag" && (
-          <div className="grid gap-3">
-            <button onClick={() => cast("red")} className={`rounded-3xl py-8 text-3xl font-extrabold active:scale-95 ${myVote === "red" ? "bg-red-500 ring-4 ring-white" : "bg-red-500/60"}`}>🚩 Red flag</button>
-            <button onClick={() => cast("ok")} className={`rounded-3xl py-8 text-3xl font-extrabold active:scale-95 ${myVote === "ok" ? "bg-emerald-500 ring-4 ring-white" : "bg-emerald-500/60"}`}>✅ Just a personality</button>
           </div>
         )}
         {id === "exposed" && (

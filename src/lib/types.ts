@@ -34,7 +34,7 @@ export interface GameResults {
   receipts: Record<string, number[]>;           // card index -> islanders the group pointed at
   canceled: Record<string, number[]>;           // card index -> islander indexes who got "canceled"
   exposed: Record<string, number[]>;            // card index -> islander indexes who put a finger down
-  redflag: Record<string, "red" | "ok">;        // card index -> verdict
+  redflag: Record<string, string>;              // 5-Second Challenge: card index -> result (a|b|both|none|pass|fail)
 }
 export interface HotSeat { on: boolean; who: number; q: number; key: number }
 export interface PresState {
@@ -51,6 +51,7 @@ export interface PresState {
   pv: boolean;       // phone voting on/off for game rounds
   votes: Record<string, Record<string, string | number>>; // "round:card" -> voter index -> choice
   subs: Record<string, { a: string; b: string; fake?: "A" | "B" }>; // guest statements for Receipts (fake is hidden from clients until revealed)
+  duel: Record<string, { a: number; b: number }>; // challenge contestants per card (b = -1 for a solo challenge)
   rev: number[];     // authors whose receipt card has been revealed
 }
 export type Command =
@@ -62,7 +63,8 @@ export type Command =
   | { type: "togglePause" } | { type: "toggleMute" }
   | { type: "enter" }
   | { type: "gnext" } | { type: "gprev" }
-  | { type: "mark"; who: number } | { type: "verdict"; v: "red" | "ok" }
+  | { type: "mark"; who: number } | { type: "verdict"; v: "a" | "b" | "both" | "none" | "pass" | "fail" }
+  | { type: "duel"; a: number; b: number }
   | { type: "hotStart"; who: number; q: number } | { type: "hotEnd" }
   | { type: "finale"; stage: number }
   | { type: "pv"; on: boolean }

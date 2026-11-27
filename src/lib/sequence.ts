@@ -18,7 +18,7 @@ export type RoundId = "receipts" | "canceled" | "redflag" | "exposed" | "awards"
 export const ROUNDS: { id: RoundId; n: number; title: string; tag: string; icon: string; hue: string }[] = [
   { id: "receipts", n: 1, title: "The Villa Has Receipts", tag: "Screenshots never lie.", icon: "🧾", hue: "#19c3dc" },
   { id: "canceled", n: 2, title: "Most Likely to Get Canceled", tag: "Vote. Regret. Repeat.", icon: "🚫", hue: "#ff2d95" },
-  { id: "redflag", n: 3, title: "Red Flag or Just a Personality?", tag: "Defend your choices.", icon: "🚩", hue: "#ff5a3c" },
+  { id: "redflag", n: 3, title: "5 Second Challenge", tag: "Think fast. Look silly.", icon: "⏱️", hue: "#ff5a3c" }, // (internal id kept from the old Red Flag game)
   { id: "exposed", n: 4, title: "Never Have I Ever: Exposed", tag: "Fingers down. Truth up.", icon: "🤫", hue: "#ffb02e" },
   { id: "awards", n: 5, title: "The Villa Awards", tag: "And the winner is…", icon: "🏆", hue: "#ffc43d" },
 ];

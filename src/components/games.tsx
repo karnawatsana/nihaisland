@@ -99,7 +99,6 @@ export function GameScreen({ id, data }: { id: GameKey; data: RoomData }) {
   const authorP = author !== undefined ? people[author] : undefined;
   const prompt = id === "receipts" ? (authorP ? `Which of ${nm(authorP)}'s statements is FAKE?` : "No statements yet — everyone scan the QR and send yours!") : decks[id][idx] ?? "(this deck is empty — add cards in /setup → Games)";
   const picks = id === "canceled" || id === "exposed" ? state.res[id][String(idx)] ?? [] : [];
-  const verdict = id === "redflag" ? state.res.redflag[String(idx)] : undefined;
   const islanders = cast.slice(0, CAST_SIZE);
   const beat = state.beat;
   const votesKey = `${id}:${idx}`; const cardVotes = state.votes[votesKey] ?? {};
@@ -108,7 +107,7 @@ export function GameScreen({ id, data }: { id: GameKey; data: RoomData }) {
   const qrSmall = useVoteQr(data.code, 200);
   const runKey = `${state.introKey}-${idx}-${beat}`;
 
-  const header = id === "canceled" ? "MOST LIKELY TO GET CANCELED FOR…" : id === "redflag" ? "RED FLAG — OR JUST A PERSONALITY?" : id === "exposed" ? "NEVER HAVE I EVER…" : null;
+  const header = id === "canceled" ? "MOST LIKELY TO GET CANCELED FOR…" : id === "exposed" ? "NEVER HAVE I EVER…" : null;
   return (
     <div className="stage-layer">
       <Sky dim={0.3} palms={false} sunX={960} tint={`radial-gradient(circle at 50% 45%, ${meta.hue}66, transparent 65%)`} />
@@ -168,8 +167,6 @@ export function GameScreen({ id, data }: { id: GameKey; data: RoomData }) {
             return vs.length ? <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }} style={{ fontSize: 46, fontWeight: 700, background: "rgba(3,40,66,.75)", borderRadius: 99, padding: "10px 44px" }}>🕵️ {caught} caught it &nbsp;·&nbsp; 😈 {nm(authorP)} fooled {fooled}</motion.div> : null;
           })()}
           {id === "canceled" && (picks.length ? <><div style={{ display: "flex", gap: 24 }}>{picks.map((w) => <Avatar key={w} c={islanders[w]} size={150} ring />)}</div><Stamp text={`${picks.map((w) => islanders[w].firstName.replace(/[\[\]]/g, "")).join(" & ")} — canceled`} color="#e0127c" size={64} rot={-3} /></> : <Stamp text="Nobody. This time." color="#06344d" size={70} rot={-3} />)}
-          {id === "redflag" && state.pv && voted > 0 && <div style={{ fontSize: 44, fontWeight: 800, background: "rgba(3,40,66,.7)", borderRadius: 99, padding: "6px 36px" }}>🚩 {Object.values(cardVotes).filter((x) => x === "red").length} &nbsp;·&nbsp; ✅ {Object.values(cardVotes).filter((x) => x === "ok").length}</div>}
-          {id === "redflag" && (verdict === "red" ? <Stamp text="🚩 Red flag" color="#e0221c" size={110} /> : verdict === "ok" ? <Stamp text="✅ Just a personality" color="#0a9f6b" size={90} /> : <Stamp text="Hung jury" color="#06344d" size={90} />)}
           {id === "exposed" && <Stamp text={picks.length ? `${picks.length} finger${picks.length > 1 ? "s" : ""} down — exposed!` : "Squeaky clean (liars)"} color={picks.length ? "#e0127c" : "#0a9f6b"} size={62} rot={-3} />}
         </div>
       )}
@@ -251,7 +248,6 @@ export function FinaleScreen({ data }: { data: RoomData }) {
   const nihaName = niha.firstName.replace(/[\[\]]/g, "");
   const canceledTop = topOf(state.res.canceled, cast);
   const exposedTop = topOf(state.res.exposed, cast);
-  const reds = Object.values(state.res.redflag).filter((v) => v === "red").length;
   const people = peopleOf(data); const rs = receiptStats(state);
   const top = (m: Record<number, number>) => { const e = Object.entries(m).sort((a, b) => b[1] - a[1]); if (!e.length) return null; const names = e.filter((x) => x[1] === e[0][1]).map((x) => (people[+x[0]] ? nm(people[+x[0]]) : "")).filter(Boolean); return `${names.join(" & ")} (${e[0][1]})`; };
   const liar = top(rs.fooled), detective = top(rs.caught);
@@ -419,6 +415,62 @@ export function AwardsRound({ data }: { data: RoomData }) {
         </div>
       )}
       {beat === 1 && <VoteNow data={data} voted={voted} total={people.length} prompt={title} />}
+    </div>
+  );
+}
+
+const challengeScore = (res: Record<string, string>, duel: Record<string, { a: number; b: number }>, who: number) =>
+  Object.entries(res).reduce((n, [k, v]) => { const d = duel[k]; if (!d) return n; return n + ((v === "a" || v === "pass" || v === "both") && d.a === who ? 1 : 0) + ((v === "b" || v === "both") && d.b === who ? 1 : 0); }, 0);
+
+/** Round 3: 5 Second Challenge — solo or head-to-head, host calls the result. */
+export function ChallengeRound({ data }: { data: RoomData }) {
+  const { state, decks } = data; const people = peopleOf(data);
+  const list = decks.redflag; const total = list.length; const idx = Math.min(state.card, Math.max(total - 1, 0));
+  const prompt = list[idx] ?? "(no challenges — add some in /setup → Games)";
+  const beat = state.beat; const key = String(idx); const duel = state.duel[key]; const result = state.res.redflag[key];
+  const solo = duel && duel.b === -1; const pa = duel ? people[duel.a] : undefined; const pb = duel && duel.b >= 0 ? people[duel.b] : undefined;
+  const [n, setN] = useState(5);
+  useEffect(() => {
+    if (beat !== 1) return; setN(5);
+    const t = [1, 2, 3, 4, 5].map((i) => setTimeout(() => setN(5 - i), i * 1000)); return () => t.forEach(clearTimeout);
+  }, [beat, idx, state.introKey]);
+  const score = (w: number) => challengeScore(state.res.redflag, state.duel, w);
+  const outcome = !result ? null : result === "pass" ? { t: `${pa ? nm(pa) : ""} nailed it!`, c: "#0a9f6b" } : result === "fail" ? { t: `${pa ? nm(pa) : ""} choked`, c: "#e0221c" } : result === "both" ? { t: "Both nailed it!", c: "#0a9f6b" } : result === "none" ? { t: "Both failed. Iconic.", c: "#e0221c" } : { t: `${(result === "a" ? pa : pb) ? nm((result === "a" ? pa : pb) as Islander) : ""} wins!`, c: "#e0127c" };
+  const Contestant = ({ c, win }: { c: Islander; win: boolean }) => (
+    <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: win ? 1.12 : 1, opacity: beat >= 2 && result && !win && result !== "both" && result !== "none" && result !== "fail" ? 0.45 : 1 }} transition={{ type: "spring", bounce: 0.4 }} style={{ textAlign: "center" }}>
+      <Avatar c={c} size={solo ? 240 : 220} ring={win || beat === 1} tag={score(people.indexOf(c)) ? `${score(people.indexOf(c))} pt${score(people.indexOf(c)) === 1 ? "" : "s"}` : undefined} />
+      <div style={{ marginTop: 26, fontSize: 48, fontWeight: 800, textShadow: "0 3px 14px rgba(0,30,50,.7)" }}>{nm(c)}</div>
+    </motion.div>
+  );
+  return (
+    <div className="stage-layer">
+      <Sky dim={0.3} palms={false} sunX={960} tint="radial-gradient(circle at 50% 45%, rgba(255,90,60,.5), transparent 65%)" />
+      <div style={{ position: "absolute", left: 80, right: 80, top: 52, display: "flex", justifyContent: "space-between", alignItems: "center", textShadow: "0 2px 14px rgba(0,50,80,.7)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 22 }}><span style={{ fontSize: 66 }}>⏱️</span><div><div style={{ fontSize: 24, fontWeight: 700, letterSpacing: "0.5em", opacity: 0.9 }}>NIHA ISLAND · ROUND 3</div><div className="title-pink" style={{ fontSize: 58, fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1 }}>5 second challenge</div></div></div>
+        <div className="glass" style={{ borderRadius: 99, padding: "10px 34px", fontSize: 30, fontWeight: 700, letterSpacing: "0.2em", background: "rgba(3,40,66,.5)" }}>CHALLENGE {idx + 1} / {total}</div>
+      </div>
+      <AnimatePresence mode="wait">
+        <motion.div key={`ch${state.introKey}-${idx}`} initial={{ opacity: 0, y: 70, scale: 0.92 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -40 }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          className="glass" style={{ position: "absolute", left: 160, right: 160, top: 190, borderRadius: 48, padding: "36px 70px", background: "rgba(3,40,66,.58)", borderColor: "rgba(255,120,80,.8)", boxShadow: "0 0 70px rgba(255,90,60,.4)" }}>
+          <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: "0.35em", color: "#ffe39a" }}>{solo ? "SOLO CHALLENGE" : pb ? "HEAD TO HEAD" : "THE CHALLENGE"}</div>
+          <div style={{ marginTop: 12, fontSize: prompt.length > 70 ? 66 : 80, fontWeight: 800, lineHeight: 1.1, letterSpacing: "-0.02em", textShadow: "0 6px 24px rgba(0,30,50,.5)" }}>{prompt}</div>
+        </motion.div>
+      </AnimatePresence>
+      <div style={{ position: "absolute", left: 0, right: 0, top: 560, display: "flex", justifyContent: "center", alignItems: "center", gap: 120 }}>
+        {pa ? (
+          <>
+            <Contestant c={pa} win={beat >= 2 && (result === "a" || result === "pass" || result === "both")} />
+            {pb && (
+              <div style={{ width: 300, textAlign: "center" }}>
+                {beat === 1 ? <motion.div key={n} initial={{ scale: 1.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ fontSize: n > 0 ? 260 : 120, fontWeight: 800, lineHeight: 1, color: n > 0 ? "#fff" : "#ffe39a", textShadow: "0 0 70px rgba(255,45,149,.9), 0 10px 0 #ff2d95" }}>{n > 0 ? n : "TIME!"}</motion.div> : <div style={{ fontSize: 130, fontWeight: 800, color: "#ffe39a", textShadow: "0 8px 0 #ff2d95" }}>VS</div>}
+              </div>
+            )}
+            {pb && <Contestant c={pb} win={beat >= 2 && (result === "b" || result === "both")} />}
+            {solo && beat === 1 && <motion.div key={n} initial={{ scale: 1.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ fontSize: n > 0 ? 280 : 130, fontWeight: 800, lineHeight: 1, color: n > 0 ? "#fff" : "#ffe39a", textShadow: "0 0 70px rgba(255,45,149,.9), 0 10px 0 #ff2d95" }}>{n > 0 ? n : "TIME!"}</motion.div>}
+          </>
+        ) : <div className="glass" style={{ borderRadius: 40, padding: "30px 60px", fontSize: 50, fontWeight: 700, background: "rgba(3,40,66,.55)" }}>Waiting for the host to call someone out…</div>}
+      </div>
+      {beat >= 2 && outcome && <div style={{ position: "absolute", left: 0, right: 0, bottom: 56, textAlign: "center", zIndex: 4 }}><Stamp text={outcome.t} color={outcome.c} size={64} rot={-3} /></div>}
     </div>
   );
 }

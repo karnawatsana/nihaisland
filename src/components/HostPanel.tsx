@@ -46,7 +46,7 @@ export function HostPanel({ code, onLogout, compact = false }: { code: string; o
         <div className="mt-4 rounded-3xl border border-white/30 bg-[#04283e]/60 p-4 backdrop-blur" data-testid="intro-panel">
           <div className="text-[11px] font-semibold uppercase tracking-[.25em] text-gold">{GAME_META[step.id].icon} Intro · explain the rules</div>
           <p className="mt-2 text-sm text-white/90">The TV is showing how this round works. Read it out, then start the game.</p>
-          {step.id === "awards" ? <p className="mt-3 rounded-xl bg-emerald-500/20 p-2 text-xs font-bold text-emerald-200">📱 Awards are voted live on phones. Let everyone scan the QR and pick their name first.</p> : <button onClick={() => { buzz(); run({ type: "pv", on: !state.pv }); }} className={`mt-3 w-full rounded-xl py-2.5 text-sm font-extrabold ${state.pv ? "bg-emerald-500" : "bg-white/20"}`}>📱 Phone voting: {state.pv ? "ON" : "OFF"}</button>}
+          {step.id === "redflag" ? <p className="mt-3 rounded-xl bg-white/10 p-2 text-xs">⏱️ Judged by you — no phone voting. Pick who plays on the next screen.</p> : step.id === "awards" ? <p className="mt-3 rounded-xl bg-emerald-500/20 p-2 text-xs font-bold text-emerald-200">📱 Awards are voted live on phones. Let everyone scan the QR and pick their name first.</p> : <button onClick={() => { buzz(); run({ type: "pv", on: !state.pv }); }} className={`mt-3 w-full rounded-xl py-2.5 text-sm font-extrabold ${state.pv ? "bg-emerald-500" : "bg-white/20"}`}>📱 Phone voting: {state.pv ? "ON" : "OFF"}</button>}
           {step.id === "receipts" && (() => {
             const ppl = [...cast.slice(0, CAST_SIZE), ...(data.poster.host ? [data.poster.host] : [])];
             const have = Object.keys(state.subs).length; const missing = ppl.filter((_, i) => !state.subs[String(i)]);
@@ -73,6 +73,7 @@ export function HostPanel({ code, onLogout, compact = false }: { code: string; o
             {(() => {
               const voters = [...cast.slice(0, CAST_SIZE), ...(data.poster.host ? [data.poster.host] : [])];
               const cv = state.votes[`${id}:${idx}`] ?? {}; const missing = voters.filter((_, i) => cv[String(i)] === undefined);
+              if (id === "redflag") return null;
               return (
                 <div className="mt-3 rounded-2xl bg-black/25 p-3">
                   {id === "awards" ? <div className="text-xs font-bold text-emerald-300">📱 Awards always use phone voting</div> : <button onClick={() => { buzz(); run({ type: "pv", on: !state.pv }); }} className={`w-full rounded-xl py-2.5 text-sm font-extrabold ${state.pv ? "bg-emerald-500" : "bg-white/20"}`}>📱 Phone voting: {state.pv ? "ON" : "OFF"}</button>}
@@ -82,12 +83,39 @@ export function HostPanel({ code, onLogout, compact = false }: { code: string; o
             })()}
             <button disabled={last} onClick={() => { buzz(); run({ type: "gnext" }); }} className="mt-3 w-full rounded-2xl bg-gradient-to-br from-hot to-[#d4106f] py-5 text-lg font-extrabold tracking-wide shadow-lg shadow-hot/40 transition active:scale-[.97] disabled:opacity-40">{last ? "Last card done — tap NEXT ▶" : `${meta.labels[state.beat]} ▶`}</button>
             <button onClick={() => { buzz(); run({ type: "gprev" }); }} className="mt-2 w-full rounded-xl bg-white/15 py-2.5 text-sm font-bold">◀ Back a step</button>
-            {id === "redflag" && (
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <button onClick={() => { buzz(); run({ type: "verdict", v: "red" }); }} className={`rounded-xl py-3 text-sm font-bold ${verdict === "red" ? "bg-red-500" : "bg-white/15"}`}>🚩 Red flag</button>
-                <button onClick={() => { buzz(); run({ type: "verdict", v: "ok" }); }} className={`rounded-xl py-3 text-sm font-bold ${verdict === "ok" ? "bg-emerald-500" : "bg-white/15"}`}>✅ Personality</button>
-              </div>
-            )}
+            {id === "redflag" && (() => {
+              const d = state.duel[String(idx)]; const nm = (i: number) => (ppl[i]?.firstName ?? "?").replace(/[\[\]]/g, "");
+              const set = (a: number, b: number) => { buzz(); run({ type: "duel", a, b }); };
+              const rnd = (n: number, not = -1) => { let x = Math.floor(Math.random() * n); while (x === not) x = Math.floor(Math.random() * n); return x; };
+              const tap = (i: number) => { if (!d || d.a === i) return set(i, -1); if (d.b === i) return set(d.a, -1); if (d.b === -1) return set(d.a, i); return set(i, -1); };
+              const res = verdict;
+              return (
+                <div className="mt-3 rounded-2xl bg-black/25 p-3" data-testid="challenge-panel">
+                  <div className="text-[11px] font-semibold uppercase tracking-[.2em] text-white/70">Who's up? {d ? (d.b === -1 ? `Solo: ${nm(d.a)}` : `${nm(d.a)} vs ${nm(d.b)}`) : "(not picked — random pair if you start)"}</div>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <button onClick={() => set(rnd(8), -1)} className="rounded-xl bg-white/15 py-2.5 text-sm font-bold">🎲 Random solo</button>
+                    <button onClick={() => { const a = rnd(8); set(a, rnd(8, a)); }} className="rounded-xl bg-white/15 py-2.5 text-sm font-bold">🎲 Random duel</button>
+                  </div>
+                  <div className="mt-2 grid grid-cols-4 gap-1.5">
+                    {ppl.slice(0, CAST_SIZE).map((c, i) => <button key={c.id} onClick={() => tap(i)} className={`truncate rounded-lg px-1 py-2 text-xs font-semibold ${d && (d.a === i || d.b === i) ? "bg-hot" : "bg-white/15"}`}>{c.firstName.replace(/[\[\]]/g, "")}</button>)}
+                  </div>
+                  <p className="mt-1 text-[11px] text-white/60">Tap one name = solo. Tap a second = head-to-head.</p>
+                  {state.beat >= 1 && d && (
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      {d.b === -1 ? (<>
+                        <button onClick={() => { buzz(); run({ type: "verdict", v: "pass" }); }} className={`rounded-xl py-3 text-sm font-bold ${res === "pass" ? "bg-emerald-500" : "bg-white/15"}`}>✅ Nailed it</button>
+                        <button onClick={() => { buzz(); run({ type: "verdict", v: "fail" }); }} className={`rounded-xl py-3 text-sm font-bold ${res === "fail" ? "bg-red-500" : "bg-white/15"}`}>❌ Choked</button>
+                      </>) : (<>
+                        <button onClick={() => { buzz(); run({ type: "verdict", v: "a" }); }} className={`rounded-xl py-3 text-sm font-bold ${res === "a" ? "bg-hot" : "bg-white/15"}`}>🏆 {nm(d.a)} wins</button>
+                        <button onClick={() => { buzz(); run({ type: "verdict", v: "b" }); }} className={`rounded-xl py-3 text-sm font-bold ${res === "b" ? "bg-hot" : "bg-white/15"}`}>🏆 {nm(d.b)} wins</button>
+                        <button onClick={() => { buzz(); run({ type: "verdict", v: "both" }); }} className={`rounded-xl py-3 text-sm font-bold ${res === "both" ? "bg-emerald-500" : "bg-white/15"}`}>🤝 Both nailed it</button>
+                        <button onClick={() => { buzz(); run({ type: "verdict", v: "none" }); }} className={`rounded-xl py-3 text-sm font-bold ${res === "none" ? "bg-red-500" : "bg-white/15"}`}>💀 Both failed</button>
+                      </>)}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             {(id === "canceled" || id === "exposed") && (
               <>
                 <div className="mt-3 text-[11px] font-semibold uppercase tracking-[.2em] text-white/70">{id === "canceled" ? "Tap who got canceled" : "Tap who put a finger down"}</div>

@@ -6,7 +6,7 @@ import { defaultDecks } from "@/lib/decks";
 import type { Command } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
-const TYPES = ["next","prev","goto","openPoster","replayOpening","startCast","bombshell","restart","standby","togglePause","toggleMute","enter","gnext","gprev","mark","verdict","hotStart","hotEnd","finale","pv","vote","submit"];
+const TYPES = ["next","prev","goto","openPoster","replayOpening","startCast","bombshell","restart","standby","togglePause","toggleMute","enter","gnext","gprev","mark","verdict","hotStart","hotEnd","finale","pv","vote","submit","duel"];
 
 export async function POST(req: Request, { params }: { params: Promise<{ code: string }> }) {
   const code = normCode((await params).code);
@@ -24,7 +24,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ code: s
   const isIdx = (n: unknown) => Number.isInteger(n) && (n as number) >= 0 && (n as number) < 8;
   if (cmd.type === "mark" && !isIdx(cmd.who)) return json({ error: "Bad islander" }, 400);
   if (cmd.type === "hotStart" && (!isIdx(cmd.who) || !Number.isInteger(cmd.q) || cmd.q < 0)) return json({ error: "Bad hot seat" }, 400);
-  if (cmd.type === "verdict" && cmd.v !== "red" && cmd.v !== "ok") return json({ error: "Bad verdict" }, 400);
+  if (cmd.type === "verdict" && !["a", "b", "both", "none", "pass", "fail"].includes(cmd.v)) return json({ error: "Bad verdict" }, 400);
+  if (cmd.type === "duel" && (!Number.isInteger(cmd.a) || !Number.isInteger(cmd.b))) return json({ error: "Bad contestants" }, 400);
   if (cmd.type === "finale" && ![0, 1, 2].includes(cmd.stage)) return json({ error: "Bad stage" }, 400);
   const r = await updateRoom(code, (rec) => {
     const d = { ...defaultDecks(), ...(rec.poster.decks ?? {}) };
