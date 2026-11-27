@@ -27,7 +27,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ code: st
   const dk = b.poster?.decks;
   const decks = dk ? {
     receipts: (Array.isArray(dk.receipts) ? dk.receipts : []).slice(0, 60).map((x: any) => ({ q: str(x?.q, 220).trim(), reveal: str(x?.reveal, 220).trim() })).filter((x: any) => x.q),
-    canceled: lines(dk.canceled), redflag: lines(dk.redflag), exposed: lines(dk.exposed), hotseat: lines(dk.hotseat),
+    canceled: lines(dk.canceled), redflag: lines(dk.redflag), exposed: lines(dk.exposed), hotseat: lines(dk.hotseat), awards: lines(dk.awards),
   } : undefined;
   const cast = b.cast.map((c: any, i: number) => clean(c, i, i === CAST_SIZE - 1));
   const p = b.poster ?? {};

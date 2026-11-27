@@ -48,6 +48,18 @@ export const defaultDecks = (): Decks => ({
     "eaten food off the floor (5-second rule)",
     "stalked someone's Instagram back to 2014",
   ],
+  awards: [
+    "Best Dressed 👗",
+    "Funniest Person in the Group 😂",
+    "Group Mom / Dad: takes care of everyone 🫶",
+    "Most Likely to Be Late to Their Own Wedding ⏰",
+    "Biggest Drama Magnet 🌪️",
+    "Best Storyteller (even if half of it is made up) 📖",
+    "Most Likely to Cry at a Movie 🎬",
+    "The Friend You'd Call at 3 AM 📞",
+    "Group Chat MVP 💬",
+    "Most Likely to Become Famous (or Infamous) ⭐",
+  ],
   hotseat: [
     "What's your most unpopular opinion?",
     "What's the pettiest thing you've ever done?",
@@ -65,6 +77,7 @@ export const GAME_META = {
   canceled: { icon: "🚫", title: "Most Likely to Get Canceled", hue: "#ff2d95", word: "POINT!", labels: ["Start 3-2-1", "Announce verdict", "Next card"] },
   redflag: { icon: "🚩", title: "Red Flag or Just a Personality?", hue: "#ff5a3c", word: "VOTE!", labels: ["Start vote", "Show verdict", "Next card"] },
   exposed: { icon: "🤫", title: "Never Have I Ever: Exposed", hue: "#ffb02e", word: "FINGERS DOWN!", labels: ["Fingers down!", "Show the damage", "Next card"] },
+  awards: { icon: "🏆", title: "The Villa Awards", hue: "#ffc43d", word: "VOTE!", labels: ["Open voting", "Announce the winner", "Next award"] },
 } as const;
 
 /** Text for each round's intro screen: what it is and how to play. `pv` = phone voting is on. */
@@ -107,6 +120,16 @@ export const GAME_INTRO: Record<GameKey, { tagline: string; what: string; how: (
       pv ? "Tap 👇 I have… if it's true for you, or ✋ Never if it's not." : "If you've done it, put a finger down. Everyone's watching.",
       "The TV shows who got exposed and keeps score all game.",
       "Lying is allowed. Getting caught is encouraged.",
+    ],
+  },
+  awards: {
+    tagline: "Friends vote. Friends regret.",
+    what: "The ceremony! For each award, everyone votes live on their phone for the friend who deserves it most. The winner gets crowned. Acceptance speeches are mandatory.",
+    how: () => [
+      "Scan the QR code on the TV and pick who you are.",
+      "An award category appears on the screen.",
+      "Vote on your phone for who deserves it most. No voting for yourself. Nice try.",
+      "The winner is announced with confetti. Speech required!",
     ],
   },
 };

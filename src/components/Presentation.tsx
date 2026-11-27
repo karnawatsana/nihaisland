@@ -87,7 +87,7 @@ export function Presentation({ code, contained = false }: { code: string; contai
     if (!data) return; const s = data.state, p = snap.current;
     const k = STEPS[s.step].kind;
     if (p.card >= 0) {
-      if (k === "round" && s.beat !== p.beat) { if (s.beat === 1) sfx.countdown(); else if (s.beat === 2) sfx.stamp(); }
+      if (k === "round" && s.beat !== p.beat) { if (s.beat === 1) { if (STEPS[s.step].kind === "round" && (STEPS[s.step] as { id: string }).id !== "awards") sfx.countdown(); else sfx.chime(); } else if (s.beat === 2) { if ((STEPS[s.step] as { id: string }).id === "awards") sfx.fanfare(); else sfx.stamp(); } }
       if (k === "round" && s.card !== p.card) sfx.whoosh();
       if (s.hot.on && s.hot.key !== p.hot) sfx.siren();
       if (k === "finale" && s.finale !== p.fin) { if (s.finale === 1) sfx.fanfare(); else if (s.finale === 2) sfx.chime(); }

@@ -46,7 +46,7 @@ export function HostPanel({ code, onLogout, compact = false }: { code: string; o
         <div className="mt-4 rounded-3xl border border-white/30 bg-[#04283e]/60 p-4 backdrop-blur" data-testid="intro-panel">
           <div className="text-[11px] font-semibold uppercase tracking-[.25em] text-gold">{GAME_META[step.id].icon} Intro · explain the rules</div>
           <p className="mt-2 text-sm text-white/90">The TV is showing how this round works. Read it out, then start the game.</p>
-          <button onClick={() => { buzz(); run({ type: "pv", on: !state.pv }); }} className={`mt-3 w-full rounded-xl py-2.5 text-sm font-extrabold ${state.pv ? "bg-emerald-500" : "bg-white/20"}`}>📱 Phone voting: {state.pv ? "ON" : "OFF"}</button>
+          {step.id === "awards" ? <p className="mt-3 rounded-xl bg-emerald-500/20 p-2 text-xs font-bold text-emerald-200">📱 Awards are voted live on phones. Let everyone scan the QR and pick their name first.</p> : <button onClick={() => { buzz(); run({ type: "pv", on: !state.pv }); }} className={`mt-3 w-full rounded-xl py-2.5 text-sm font-extrabold ${state.pv ? "bg-emerald-500" : "bg-white/20"}`}>📱 Phone voting: {state.pv ? "ON" : "OFF"}</button>}
           {step.id === "receipts" && (() => {
             const ppl = [...cast.slice(0, CAST_SIZE), ...(data.poster.host ? [data.poster.host] : [])];
             const have = Object.keys(state.subs).length; const missing = ppl.filter((_, i) => !state.subs[String(i)]);
@@ -75,8 +75,8 @@ export function HostPanel({ code, onLogout, compact = false }: { code: string; o
               const cv = state.votes[`${id}:${idx}`] ?? {}; const missing = voters.filter((_, i) => cv[String(i)] === undefined);
               return (
                 <div className="mt-3 rounded-2xl bg-black/25 p-3">
-                  <button onClick={() => { buzz(); run({ type: "pv", on: !state.pv }); }} className={`w-full rounded-xl py-2.5 text-sm font-extrabold ${state.pv ? "bg-emerald-500" : "bg-white/20"}`}>📱 Phone voting: {state.pv ? "ON" : "OFF"}</button>
-                  {state.pv && <div className="mt-2 text-xs text-white/85" data-testid="vote-status">{Object.keys(cv).length} / {voters.length} voted{state.beat === 1 && missing.length > 0 && missing.length < voters.length ? ` · waiting on ${missing.map((m) => m.firstName.replace(/[\[\]]/g, "")).join(", ")}` : ""}</div>}
+                  {id === "awards" ? <div className="text-xs font-bold text-emerald-300">📱 Awards always use phone voting</div> : <button onClick={() => { buzz(); run({ type: "pv", on: !state.pv }); }} className={`w-full rounded-xl py-2.5 text-sm font-extrabold ${state.pv ? "bg-emerald-500" : "bg-white/20"}`}>📱 Phone voting: {state.pv ? "ON" : "OFF"}</button>}
+                  {(state.pv || id === "awards") && <div className="mt-2 text-xs text-white/85" data-testid="vote-status">{Object.keys(cv).length} / {voters.length} voted{state.beat === 1 && missing.length > 0 && missing.length < voters.length ? ` · waiting on ${missing.map((m) => m.firstName.replace(/[\[\]]/g, "")).join(", ")}` : ""}</div>}
                 </div>
               );
             })()}
@@ -108,7 +108,7 @@ export function HostPanel({ code, onLogout, compact = false }: { code: string; o
           <div className="mt-3 grid gap-3">
             <Btn onClick={() => run({ type: "finale", stage: 0 })} className={state.finale === 0 ? "bg-amber-400 text-black" : "bg-white/15 ring-1 ring-white/30"}>1 · 🕯 Candles lit (make a wish)</Btn>
             <Btn onClick={() => run({ type: "finale", stage: 1 })} className={state.finale === 1 ? "bg-amber-400 text-black" : "bg-gradient-to-br from-hot to-[#d4106f]"}>2 · 🌬 Blow them out! (Happy Birthday)</Btn>
-            <Btn onClick={() => run({ type: "finale", stage: 2 })} className={state.finale === 2 ? "bg-amber-400 text-black" : "bg-gradient-to-br from-[#ffb02e] to-[#ff7a2e]"}>3 · 🏆 Villa Awards</Btn>
+            <Btn onClick={() => run({ type: "finale", stage: 2 })} className={state.finale === 2 ? "bg-amber-400 text-black" : "bg-gradient-to-br from-[#ffb02e] to-[#ff7a2e]"}>3 · 🏆 Winners recap</Btn>
           </div>
         </div>
       )}

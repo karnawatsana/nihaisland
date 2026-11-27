@@ -27,9 +27,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ code: s
   if (cmd.type === "verdict" && cmd.v !== "red" && cmd.v !== "ok") return json({ error: "Bad verdict" }, 400);
   if (cmd.type === "finale" && ![0, 1, 2].includes(cmd.stage)) return json({ error: "Bad stage" }, 400);
   const r = await updateRoom(code, (rec) => {
-    const d = rec.poster.decks ?? defaultDecks();
+    const d = { ...defaultDecks(), ...(rec.poster.decks ?? {}) };
     const authors = authorsOf((rec.state.subs ?? {}) as never);
-    const ctx = { authors, lens: { receipts: authors.length, canceled: d.canceled.length, redflag: d.redflag.length, exposed: d.exposed.length } };
+    const ctx = { authors, lens: { receipts: authors.length, canceled: d.canceled.length, redflag: d.redflag.length, exposed: d.exposed.length, awards: d.awards.length } };
     const state = reduce(rec.state, cmd, Date.now(), ctx);
     if (JSON.stringify(state) === JSON.stringify(norm(rec.state))) return null;
     return { ...rec, state, version: rec.version + 1 };

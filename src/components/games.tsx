@@ -285,13 +285,13 @@ export function RoundIntro({ id, data }: { id: GameKey; data: RoomData }) {
   const meta = GAME_META[id]; const info = GAME_INTRO[id];
   const n = ROUNDS.find((r) => r.id === id)!.n; const pv = data.state.pv;
   const qr = useVoteQr(data.code, 240);
-  const collect = id === "receipts"; const have = Object.keys(data.state.subs).length; const need = peopleOf(data).length;
+  const collect = id === "receipts"; const showQr = pv || collect || id === "awards"; const have = Object.keys(data.state.subs).length; const need = peopleOf(data).length;
   return (
     <div className="stage-layer" key={data.state.introKey}>
       <Sky dim={0.3} palms={false} sunX={960} tint={`radial-gradient(circle at 30% 45%, ${meta.hue}77, transparent 62%)`} />
       <div style={{ position: "absolute", left: 100, top: 90, width: 900 }}>
         <motion.div initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", alignItems: "center", gap: 24 }}>
-          <span className="glass" style={{ borderRadius: 99, padding: "8px 30px", fontSize: 28, fontWeight: 700, letterSpacing: "0.3em", background: "rgba(3,40,66,.55)" }}>ROUND {n} OF {ROUNDS.length}</span>
+          <span className="glass" style={{ borderRadius: 99, padding: "8px 30px", fontSize: 28, fontWeight: 700, letterSpacing: "0.3em", background: "rgba(3,40,66,.55)" }}>{id === "awards" ? "THE CEREMONY" : `ROUND ${n} OF ${ROUNDS.length - 1}`}</span>
           <span style={{ fontSize: 28, fontWeight: 700, letterSpacing: "0.4em", textShadow: "0 2px 12px rgba(0,50,80,.7)" }}>NIHA ISLAND</span>
         </motion.div>
         <motion.div initial={{ opacity: 0, scale: 0.4, rotate: -14 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} transition={{ delay: 0.3, type: "spring", bounce: 0.5, duration: 1 }} style={{ fontSize: 150, marginTop: 24, lineHeight: 1, filter: "drop-shadow(0 12px 30px rgba(0,30,50,.5))" }}>{meta.icon}</motion.div>
@@ -310,7 +310,7 @@ export function RoundIntro({ id, data }: { id: GameKey; data: RoomData }) {
           ))}
         </div>
       </motion.div>
-      {(pv || collect) && qr && (
+      {showQr && qr && (
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: collect ? 1.6 : 2.6, duration: 0.8 }} className="glass" style={{ position: "absolute", right: 90, bottom: collect ? 60 : 56, borderRadius: 32, padding: "16px 30px 16px 16px", display: "flex", alignItems: "center", gap: 26, background: "rgba(3,40,66,.7)" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={qr} width={150} height={150} alt="Scan to join voting" style={{ background: "#fff", padding: 8, borderRadius: 18 }} />
@@ -322,20 +322,15 @@ export function RoundIntro({ id, data }: { id: GameKey; data: RoomData }) {
 }
 
 interface Award { icon: string; title: string; who: Islander[]; note: string }
+/** Winners of every award that got votes (friend-group awards, voted live on phones). */
 function awardsOf(data: RoomData): Award[] {
-  const { state, cast } = data; const people = peopleOf(data); const out: Award[] = [];
-  const top = (m: Record<number, number>, pool: Islander[]): { who: Islander[]; n: number } | null => {
-    const e = Object.entries(m).filter(([k]) => pool[+k]).sort((a, b) => b[1] - a[1]); if (!e.length || e[0][1] <= 0) return null;
-    return { who: e.filter((x) => x[1] === e[0][1]).map((x) => pool[+x[0]]), n: e[0][1] };
-  };
-  const count = (res: Record<string, number[]>) => { const t: Record<number, number> = {}; Object.values(res).forEach((v) => v.forEach((w) => (t[w] = (t[w] ?? 0) + 1))); return t; };
-  const rs = receiptStats(state);
-  const liar = top(rs.fooled, people); if (liar) out.push({ icon: "😈", title: "Best Liar", who: liar.who, note: `fooled ${liar.n} ${liar.n === 1 ? "person" : "people"}` });
-  const det = top(rs.caught, people); if (det) out.push({ icon: "🕵️", title: "Sharpest Detective", who: det.who, note: `caught ${det.n} ${det.n === 1 ? "fake" : "fakes"}` });
-  const can = top(count(state.res.canceled), cast); if (can) out.push({ icon: "🚫", title: "Most Canceled", who: can.who, note: `canceled ${can.n}×` });
-  const exp = top(count(state.res.exposed), cast); if (exp) out.push({ icon: "🤫", title: "Most Exposed", who: exp.who, note: `${exp.n} fingers down` });
-  const reds = Object.values(state.res.redflag).filter((v) => v === "red").length;
-  if (reds) out.push({ icon: "🚩", title: "Red Flags Called", who: [], note: `${reds} tonight` });
+  const { state, cast, decks } = data; const people = peopleOf(data); const out: Award[] = [];
+  decks.awards.forEach((title, i) => {
+    const v = state.votes[`awards:${i}`]; if (!v || !Object.keys(v).length) return;
+    const t: Record<number, number> = {}; Object.values(v).forEach((x) => { t[x as number] = (t[x as number] ?? 0) + 1; });
+    const max = Math.max(...Object.values(t));
+    out.push({ icon: "🏆", title, who: Object.keys(t).filter((k) => t[+k] === max).map((k) => people[+k]).filter(Boolean), note: `${max} vote${max === 1 ? "" : "s"}` });
+  });
   out.push({ icon: "👑", title: "Birthday Queen", who: [cast[CAST_SIZE - 1]], note: "the main event" });
   return out;
 }
@@ -346,22 +341,84 @@ function AwardsScreen({ data }: { data: RoomData }) {
     <div className="stage-layer" key={`aw${data.state.introKey}`}>
       <Sky dim={0.18} palms={false} sunX={960} tint="radial-gradient(circle at 50% 30%, rgba(255,210,122,.5), transparent 65%)" />
       <Sparkles count={50} seed={61} /><Confetti />
-      <div style={{ position: "absolute", left: 0, right: 0, top: 60, textAlign: "center" }}>
+      <div style={{ position: "absolute", left: 0, right: 0, top: awards.length > 8 ? 70 : 60, textAlign: "center" }}>
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} style={{ fontSize: 30, fontWeight: 700, letterSpacing: "0.6em", textShadow: "0 2px 14px rgba(0,50,80,.7)" }}>NIHA ISLAND</motion.div>
-        <motion.div initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2, duration: 0.9, ease: [0.16, 1, 0.3, 1] }} className="gold-text" style={{ fontSize: 150, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1, marginTop: 6 }}>villa awards</motion.div>
+        <motion.div initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2, duration: 0.9, ease: [0.16, 1, 0.3, 1] }} className="gold-text" style={{ fontSize: awards.length > 8 ? 110 : 150, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1, marginTop: 0 }}>villa awards</motion.div>
       </div>
-      <div style={{ position: "absolute", left: 110, right: 110, top: 300, display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 36 }}>
+      <div style={{ position: "absolute", left: 50, right: 50, top: awards.length > 8 ? 235 : 285, display: "flex", flexWrap: "wrap", justifyContent: "center", gap: awards.length > 8 ? 16 : 22 }}>
         {awards.map((a, i) => (
-          <motion.div key={a.title} initial={{ opacity: 0, y: 70, scale: 0.85 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: 1 + i * 0.9, duration: 0.9, type: "spring", bounce: 0.35 }} className="glass"
-            style={{ width: awards.length > 4 ? 540 : 700, borderRadius: 40, padding: "28px 34px", background: "rgba(3,40,66,.62)", borderColor: "rgba(255,226,150,.7)", boxShadow: "0 0 60px rgba(255,200,100,.35)" }}>
-            <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: "0.2em", color: "#ffe39a" }}>{a.icon} {a.title.toUpperCase()}</div>
+          <motion.div key={a.title} initial={{ opacity: 0, y: 70, scale: 0.85 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: 0.8 + i * 0.5, duration: 0.8, type: "spring", bounce: 0.3 }} className="glass"
+            style={{ width: awards.length > 8 ? 430 : awards.length > 6 ? 540 : awards.length > 3 ? 700 : 800, borderRadius: awards.length > 8 ? 30 : 40, padding: awards.length > 8 ? "14px 20px" : awards.length > 6 ? "20px 26px" : "28px 34px", background: "rgba(3,40,66,.62)", borderColor: "rgba(255,226,150,.7)", boxShadow: "0 0 60px rgba(255,200,100,.35)" }}>
+            <div style={{ fontSize: awards.length > 8 ? 19 : awards.length > 6 ? 24 : 30, fontWeight: 700, letterSpacing: "0.08em", color: "#ffe39a", lineHeight: 1.15, minHeight: awards.length > 8 ? 44 : undefined }}>{a.icon} {a.title.toUpperCase()}</div>
             <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 20 }}>
-              <div style={{ display: "flex" }}>{a.who.slice(0, 3).map((w, k) => <div key={w.id} style={{ marginLeft: k ? -26 : 0 }}><Avatar c={w} size={100} ring /></div>)}{!a.who.length && <div style={{ fontSize: 80 }}>{a.icon}</div>}</div>
-              <div><div style={{ fontSize: a.who.length > 1 ? 40 : 54, fontWeight: 800, lineHeight: 1.05 }}>{a.who.map(nm).join(" & ") || "The villa"}</div><div style={{ marginTop: 6, fontSize: 30, fontWeight: 600, opacity: 0.9 }}>{a.note}</div></div>
+              <div style={{ display: "flex" }}>{a.who.slice(0, 3).map((w, k) => <div key={w.id} style={{ marginLeft: k ? -26 : 0 }}><Avatar c={w} size={awards.length > 8 ? 68 : awards.length > 6 ? 84 : 100} ring /></div>)}{!a.who.length && <div style={{ fontSize: 80 }}>{a.icon}</div>}</div>
+              <div><div style={{ fontSize: awards.length > 8 ? (a.who.length > 1 ? 26 : 36) : awards.length > 6 ? (a.who.length > 1 ? 32 : 42) : (a.who.length > 1 ? 40 : 54), fontWeight: 800, lineHeight: 1.05 }}>{a.who.map(nm).join(" & ") || "The villa"}</div><div style={{ marginTop: 2, fontSize: awards.length > 8 ? 22 : 26, fontWeight: 600, opacity: 0.9 }}>{a.note}</div></div>
             </div>
           </motion.div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** One award at a time: category → live phone voting → winner reveal. */
+export function AwardsRound({ data }: { data: RoomData }) {
+  const { state, decks } = data; const people = peopleOf(data);
+  const list = decks.awards; const total = list.length; const idx = Math.min(state.card, Math.max(total - 1, 0));
+  const title = list[idx] ?? "(no awards yet — add some in /setup → Games)";
+  const beat = state.beat; const votes = state.votes[`awards:${idx}`] ?? {}; const voted = Object.keys(votes).length;
+  const counts: Record<number, number> = {}; Object.values(votes).forEach((x) => { counts[x as number] = (counts[x as number] ?? 0) + 1; });
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]); const max = sorted[0]?.[1] ?? 0;
+  const winners = sorted.filter((x) => x[1] === max).map((x) => people[+x[0]]).filter(Boolean);
+  const runners = sorted.filter((x) => x[1] !== max).slice(0, 4);
+  const qrSmall = useVoteQr(data.code, 200);
+  return (
+    <div className="stage-layer">
+      <Sky dim={0.22} palms={false} sunX={960} tint="radial-gradient(circle at 50% 40%, rgba(255,196,61,.55), transparent 65%)" />
+      <Sparkles count={36} seed={71} />
+      {beat >= 2 && winners.length > 0 && <Confetti />}
+      <div style={{ position: "absolute", left: 80, right: 80, top: 52, display: "flex", justifyContent: "space-between", alignItems: "center", textShadow: "0 2px 14px rgba(0,50,80,.7)" }}>
+        <div><div style={{ fontSize: 24, fontWeight: 700, letterSpacing: "0.5em", opacity: 0.9 }}>NIHA ISLAND · THE CEREMONY</div><div className="gold-text" style={{ fontSize: 58, fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1 }}>the villa awards</div></div>
+        <div className="glass" style={{ borderRadius: 99, padding: "10px 34px", fontSize: 30, fontWeight: 700, letterSpacing: "0.2em", background: "rgba(3,40,66,.5)" }}>AWARD {idx + 1} / {total}</div>
+      </div>
+      <AnimatePresence mode="wait">
+        <motion.div key={`a${state.introKey}-${idx}-${beat >= 2 ? 2 : 0}`} initial={{ opacity: 0, y: 60, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          style={{ position: "absolute", left: 120, right: 120, top: beat >= 2 ? 170 : 220, textAlign: "center" }}>
+          {beat < 2 ? (
+            <>
+              <div style={{ fontSize: 220, lineHeight: 1, filter: "drop-shadow(0 20px 40px rgba(120,60,0,.5))" }}>🏆</div>
+              <div style={{ fontSize: 34, fontWeight: 700, letterSpacing: "0.5em", marginTop: 10, textShadow: "0 2px 14px rgba(0,50,80,.7)" }}>THE AWARD FOR</div>
+              <div className="gold-text" style={{ fontSize: title.length > 40 ? 104 : 130, fontWeight: 800, lineHeight: 1.02, letterSpacing: "-0.03em", marginTop: 14 }}>{title}</div>
+              <div style={{ marginTop: 28, fontSize: 36, fontWeight: 600, opacity: 0.9, textShadow: "0 2px 12px rgba(0,50,80,.6)" }}>Nominees: everyone in the villa</div>
+            </>
+          ) : winners.length ? (
+            <>
+              <div style={{ fontSize: 32, fontWeight: 700, letterSpacing: "0.4em", color: "#ffe39a", textShadow: "0 2px 12px rgba(0,50,80,.7)" }}>🏆 {title.toUpperCase()}</div>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} style={{ marginTop: 18, fontSize: 44, fontWeight: 700, letterSpacing: "0.35em" }}>AND THE WINNER IS…</motion.div>
+              <motion.div initial={{ opacity: 0, scale: 0.4, rotate: -8 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} transition={{ delay: 1.3, type: "spring", bounce: 0.45, duration: 1 }} style={{ marginTop: 26, display: "flex", justifyContent: "center", gap: 36 }}>
+                {winners.slice(0, 3).map((w) => <Avatar key={w.id} c={w} size={winners.length > 1 ? 220 : 280} ring />)}
+              </motion.div>
+              <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.6, duration: 0.9 }} className="title-pink" style={{ fontSize: winners.length > 1 ? 110 : 170, fontWeight: 800, lineHeight: 1, letterSpacing: "-0.04em", marginTop: 26 }}>{winners.map(nm).join(" & ").toLowerCase()}</motion.div>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2.0 }} style={{ marginTop: 14, fontSize: 40, fontWeight: 700 }}>{max} vote{max === 1 ? "" : "s"}{winners.length > 1 ? " each — it's a tie!" : ""}</motion.div>
+              {runners.length > 0 && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2.4 }} style={{ marginTop: 22, display: "flex", justifyContent: "center", gap: 26, fontSize: 30, fontWeight: 600 }}>
+                  {runners.map(([k, n]) => <span key={k} className="glass" style={{ borderRadius: 99, padding: "6px 24px", background: "rgba(3,40,66,.6)" }}>{people[+k] ? nm(people[+k]) : "?"} · {n}</span>)}
+                </motion.div>
+              )}
+            </>
+          ) : (
+            <div className="glass" style={{ marginTop: 200, borderRadius: 48, padding: "50px 80px", background: "rgba(3,40,66,.6)", fontSize: 64, fontWeight: 800, display: "inline-block" }}>No votes were cast. Scandal!</div>
+          )}
+        </motion.div>
+      </AnimatePresence>
+      {beat !== 1 && qrSmall && (
+        <div style={{ position: "absolute", right: 56, bottom: 40, textAlign: "center", zIndex: 6 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={qrSmall} width={150} height={150} alt="Scan to vote" style={{ background: "#fff", padding: 8, borderRadius: 18, boxShadow: "0 8px 24px rgba(0,30,50,.5)" }} />
+          <div style={{ marginTop: 6, fontSize: 18, fontWeight: 700, letterSpacing: "0.2em" }}>SCAN TO VOTE</div>
+        </div>
+      )}
+      {beat === 1 && <VoteNow data={data} voted={voted} total={people.length} prompt={title} />}
     </div>
   );
 }

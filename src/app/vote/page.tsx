@@ -62,7 +62,7 @@ function Voter({ code, me, setMe }: { code: string; me: number | null; setMe: (i
   );
 
   let body: React.ReactNode;
-  if (step.kind !== "round" || !state.pv) {
+  if (step.kind !== "round" || (!state.pv && step.id !== "awards")) {
     body = <Wait emoji="🌴" title={step.kind === "round" ? "Phone voting is off for this round" : "Waiting for the next round…"} sub="Keep this page open — it updates by itself." />;
   } else if (step.id === "receipts") {
     const authors = authorsOf(state.subs); const idx = Math.min(state.card, Math.max(authors.length - 1, 0));
@@ -100,7 +100,7 @@ function Voter({ code, me, setMe }: { code: string; me: number | null; setMe: (i
       const e = await send({ type: "vote", voter: me, choice });
       if (e) setErr(e);
     };
-    const prefix = id === "canceled" ? "Most likely to get canceled for…" : id === "exposed" ? "Never have I ever…" : "Red flag — or just a personality?";
+    const prefix = id === "awards" ? "The award for…" : id === "canceled" ? "Most likely to get canceled for…" : id === "exposed" ? "Never have I ever…" : "Red flag — or just a personality?";
     const card = (
       <div className="rounded-3xl bg-[#04283e]/60 p-5 ring-1 ring-white/25 backdrop-blur">
         <div className="text-[11px] font-semibold uppercase tracking-[.25em] text-gold">{meta.icon} {meta.title}</div>
@@ -114,9 +114,9 @@ function Voter({ code, me, setMe }: { code: string; me: number | null; setMe: (i
       <>
         {card}
         <div className="mt-1 text-center text-sm font-bold uppercase tracking-[.25em] text-gold">{myVote === undefined ? "Cast your vote!" : "Voted ✓ — you can change it"}</div>
-        {id === "canceled" && (
+        {(id === "canceled" || id === "awards") && (
           <div className="grid grid-cols-2 gap-3">
-            {people.slice(0, 8).map((c, i) => i === me ? null : (
+            {(id === "awards" ? people : people.slice(0, 8)).map((c, i) => i === me ? null : (
               <button key={c.id} onClick={() => cast(i)} className={`flex items-center gap-3 rounded-2xl p-3 text-left font-bold active:scale-95 ${myVote === i ? "bg-hot ring-2 ring-white" : "bg-white/15 ring-1 ring-white/30"}`}><Avatar c={c} size={44} /><span className="truncate">{name(c)}</span></button>
             ))}
           </div>

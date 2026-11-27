@@ -68,7 +68,7 @@ export function reduce(s0: PresState, c: Command, now = Date.now(), ctx: Ctx = {
     }
     case "pv": return { ...s, pv: c.on, changedAt: now };
     case "vote": {
-      if (!round || !s.pv || s.beat !== 1) return s;
+      if (!round || (!s.pv && round !== "awards") || s.beat !== 1) return s; // awards always use phone voting
       if (!validChoice(round, c.voter, c.choice)) return s;
       if (round === "receipts" && ctx.authors?.[s.card] === c.voter) return s; // can't vote on your own receipt
       const k = `${round}:${s.card}`;
@@ -92,6 +92,7 @@ export const VOTERS = 9;
 export function validChoice(round: RoundId, voter: number, choice: string | number): boolean {
   if (!Number.isInteger(voter) || voter < 0 || voter >= VOTERS) return false;
   if (round === "receipts") return choice === "A" || choice === "B";
+  if (round === "awards") return Number.isInteger(choice) && (choice as number) >= 0 && (choice as number) < VOTERS && choice !== voter;
   if (round === "canceled") return Number.isInteger(choice) && (choice as number) >= 0 && (choice as number) < 8 && choice !== voter;
   if (round === "redflag") return choice === "red" || choice === "ok";
   return choice === "yes" || choice === "no";
@@ -105,6 +106,7 @@ function markRevealed(s: PresState, ctx: Ctx): PresState {
 
 function tally(s: PresState, round: RoundId, key: string, ctx: Ctx): PresState {
   if (round === "receipts") return markRevealed(s, ctx);
+  if (round === "awards") return s;
   const v = s.votes[`${round}:${s.card}`]; if (!s.pv || !v || !Object.keys(v).length) return s;
   if (round === "canceled") {
     const t: Record<number, number> = {}; Object.values(v).forEach((x) => { t[x as number] = (t[x as number] ?? 0) + 1; });

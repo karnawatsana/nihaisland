@@ -21,13 +21,14 @@ export interface PosterConfig {
   decks?: Decks;   // editable game content (stored alongside the poster settings)
   cutout?: boolean; // true when the portrait has transparent edges (background removed)
 }
-export type GameKey = "receipts" | "canceled" | "redflag" | "exposed";
+export type GameKey = "receipts" | "canceled" | "redflag" | "exposed" | "awards";
 export interface Decks {
   receipts: { q: string; reveal: string }[];
   canceled: string[];
   redflag: string[];
   exposed: string[];
   hotseat: string[];
+  awards: string[];   // friend-group award categories, voted live on phones
 }
 export interface GameResults {
   receipts: Record<string, number[]>;           // card index -> islanders the group pointed at

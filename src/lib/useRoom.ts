@@ -35,7 +35,7 @@ export function useRoom(code: string | null) {
     const poster = v.poster ?? r.data?.poster;
     if (!cast || !poster) return;
     r.cv = v.contentVersion; r.v = v.version;
-    r.data = { code: v.code, demo: v.demo, state: norm(v.state), cast, poster, decks: poster.decks ?? defaultDecks(), version: v.version };
+    r.data = { code: v.code, demo: v.demo, state: norm(v.state), cast, poster, decks: { ...defaultDecks(), ...(poster.decks ?? {}) }, version: v.version };
     setData(r.data);
   }, []);
 

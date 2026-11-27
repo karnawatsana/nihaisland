@@ -159,9 +159,9 @@ function Editor({ code, onLogout }: { code: string; onLogout: () => void }) {
       )}
 
       {tab === "games" && (() => {
-        const decks: Decks = poster.decks ?? defaultDecks();
+        const decks: Decks = { ...defaultDecks(), ...(poster.decks ?? {}) };
         const setDeck = (d: Partial<Decks>) => editPoster({ decks: { ...decks, ...d } });
-        const ta = (key: "canceled" | "redflag" | "exposed" | "hotseat", title: string, hint: string) => (
+        const ta = (key: "canceled" | "redflag" | "exposed" | "hotseat" | "awards", title: string, hint: string) => (
           <div className="rounded-3xl border border-white/30 bg-[#04283e]/55 p-4 backdrop-blur" key={key}>
             <div className="text-sm font-extrabold uppercase tracking-[.15em]">{title}</div>
             <p className="mt-1 text-xs text-white/80">{hint} · {decks[key].filter((x) => x.trim()).length} cards</p>
@@ -179,6 +179,7 @@ function Editor({ code, onLogout }: { code: string; onLogout: () => void }) {
               {ta("canceled", `${GAME_META.canceled.icon} Most likely to get canceled for…`, "Finish the sentence: “Most likely to get canceled for …”")}
               {ta("redflag", `${GAME_META.redflag.icon} Red flag or just a personality?`, "A quirk or habit to judge")}
               {ta("exposed", `${GAME_META.exposed.icon} Never have I ever…`, "Finish the sentence: “Never have I ever …”")}
+              {ta("awards", "🏆 Villa Awards categories", "One award per line — voted live on phones, in this order")}
               {ta("hotseat", "🔥 Hot Seat questions", "Asked at random when you hit the Hot Seat button")}
             </div>
             <button className="mt-5 text-sm underline" onClick={() => { if (confirm("Replace all game cards with the starter set? (Unsaved until you press Save.)")) editPoster({ decks: defaultDecks() }); }}>Reset to starter cards</button>
