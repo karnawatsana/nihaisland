@@ -118,7 +118,7 @@ export function HostPanel({ code, onLogout, compact = false }: { code: string; o
             })()}
             {(id === "canceled" || id === "exposed") && (
               <>
-                <div className="mt-3 text-[11px] font-semibold uppercase tracking-[.2em] text-white/70">{id === "canceled" ? "Tap who got canceled" : "Tap who put a finger down"}</div>
+                <div className="mt-3 text-[11px] font-semibold uppercase tracking-[.2em] text-white/70">{id === "canceled" ? "Tap who the group picked" : "Tap who put a finger down"}</div>
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   {cast.slice(0, CAST_SIZE).map((c, i) => (
                     <button key={c.id} onClick={() => { buzz(); run({ type: "mark", who: i }); }} className={`truncate rounded-xl px-3 py-2.5 text-left text-sm font-semibold ${picks.includes(i) ? "bg-hot" : "bg-white/15"}`}>{picks.includes(i) ? (id === "exposed" ? "👇 " : "🚫 ") : ""}{c.firstName.replace(/[\[\]]/g, "")}</button>

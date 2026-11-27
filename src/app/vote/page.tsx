@@ -102,7 +102,7 @@ function Voter({ code, me, setMe }: { code: string; me: number | null; setMe: (i
       const e = await send({ type: "vote", voter: me, choice });
       if (e) setErr(e);
     };
-    const prefix = id === "awards" ? "The award for…" : id === "canceled" ? "Most likely to get canceled for…" : id === "exposed" ? "Never have I ever…" : "Never have I ever…";
+    const prefix = id === "awards" ? "The award for…" : id === "canceled" ? "Most likely to…" : id === "exposed" ? "Never have I ever…" : "Never have I ever…";
     const card = (
       <div className="rounded-3xl bg-[#04283e]/60 p-5 ring-1 ring-white/25 backdrop-blur">
         <div className="text-[11px] font-semibold uppercase tracking-[.25em] text-gold">{meta.icon} {meta.title}</div>

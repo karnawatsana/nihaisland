@@ -107,7 +107,7 @@ export function GameScreen({ id, data }: { id: GameKey; data: RoomData }) {
   const qrSmall = useVoteQr(data.code, 200);
   const runKey = `${state.introKey}-${idx}-${beat}`;
 
-  const header = id === "canceled" ? "MOST LIKELY TO GET CANCELED FOR…" : id === "exposed" ? "NEVER HAVE I EVER…" : null;
+  const header = id === "canceled" ? "MOST LIKELY TO…" : id === "exposed" ? "NEVER HAVE I EVER…" : null;
   return (
     <div className="stage-layer">
       <Sky dim={0.3} palms={false} sunX={960} tint={`radial-gradient(circle at 50% 45%, ${meta.hue}66, transparent 65%)`} />
@@ -166,7 +166,7 @@ export function GameScreen({ id, data }: { id: GameKey; data: RoomData }) {
             const vs = Object.entries(cardVotes); const caught = vs.filter(([, c]) => c === sub.fake).length; const fooled = vs.length - caught;
             return vs.length ? <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }} style={{ fontSize: 46, fontWeight: 700, background: "rgba(3,40,66,.75)", borderRadius: 99, padding: "10px 44px" }}>🕵️ {caught} caught it &nbsp;·&nbsp; 😈 {nm(authorP)} fooled {fooled}</motion.div> : null;
           })()}
-          {id === "canceled" && (picks.length ? <><div style={{ display: "flex", gap: 24 }}>{picks.map((w) => <Avatar key={w} c={islanders[w]} size={150} ring />)}</div><Stamp text={`${picks.map((w) => islanders[w].firstName.replace(/[\[\]]/g, "")).join(" & ")} — canceled`} color="#e0127c" size={64} rot={-3} /></> : <Stamp text="Nobody. This time." color="#06344d" size={70} rot={-3} />)}
+          {id === "canceled" && (picks.length ? <><div style={{ display: "flex", gap: 24 }}>{picks.map((w) => <Avatar key={w} c={islanders[w]} size={150} ring />)}</div><Stamp text={`${picks.map((w) => islanders[w].firstName.replace(/[\[\]]/g, "")).join(" & ")} — most likely!`} color="#e0127c" size={64} rot={-3} /></> : <Stamp text="Nobody. Suspicious." color="#06344d" size={70} rot={-3} />)}
           {id === "exposed" && <Stamp text={picks.length ? `${picks.length} finger${picks.length > 1 ? "s" : ""} down — exposed!` : "Squeaky clean (liars)"} color={picks.length ? "#e0127c" : "#0a9f6b"} size={62} rot={-3} />}
         </div>
       )}
@@ -176,7 +176,7 @@ export function GameScreen({ id, data }: { id: GameKey; data: RoomData }) {
         <div style={{ position: "absolute", left: 0, right: 0, bottom: 56, display: "flex", justifyContent: "center", gap: 36, zIndex: 3 }}>
           {islanders.map((c, i) => (
             <div key={c.id} style={{ textAlign: "center", opacity: beat >= 2 && picks.length && !picks.includes(i) ? 0.45 : 1, transition: "opacity .4s" }}>
-              <Avatar c={c} size={beat >= 2 ? 112 : 124} ring={picks.includes(i)} badge={picks.includes(i) ? (id === "exposed" ? "👇" : "🚫") : undefined} count={tallyOf(state.res[id], i)} tag={beat >= 2 && state.pv && id === "canceled" && voteCount(i) ? `${voteCount(i)} vote${voteCount(i) === 1 ? "" : "s"}` : undefined} />
+              <Avatar c={c} size={beat >= 2 ? 112 : 124} ring={picks.includes(i)} badge={picks.includes(i) ? (id === "exposed" ? "👇" : "👑") : undefined} count={tallyOf(state.res[id], i)} tag={beat >= 2 && state.pv && id === "canceled" && voteCount(i) ? `${voteCount(i)} vote${voteCount(i) === 1 ? "" : "s"}` : undefined} />
               <div style={{ marginTop: 18, fontSize: 24, fontWeight: 700, textShadow: "0 2px 10px rgba(0,30,50,.7)" }}>{c.firstName.replace(/[\[\]]/g, "")}</div>
             </div>
           ))}
