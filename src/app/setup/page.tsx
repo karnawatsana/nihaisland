@@ -176,7 +176,7 @@ function Editor({ code, onLogout }: { code: string; onLogout: () => void }) {
                 <div className="text-sm font-extrabold uppercase tracking-[.15em]">{GAME_META.receipts.icon} {GAME_META.receipts.title}</div>
                 <p className="mt-2 text-sm text-white/85">Round 1 has no deck to edit: it&apos;s built live from what the guests send in (one true + one fake statement each). On the night, everyone scans the QR shown on the TV during the round 1 intro.</p>
               </div>
-              {ta("canceled", `${GAME_META.canceled.icon} Most likely to…`, "Finish the sentence: “Most likely to …” (don’t type the “Most likely to” part)")}
+              {ta("canceled", `${GAME_META.canceled.icon} Most likely to…`, "Finish “Who’s most likely to …” with something a friend would actually do (don’t type the “Who’s most likely to” part)")}
               {ta("redflag", `${GAME_META.redflag.icon} 5 Second Challenge`, "A challenge, e.g. “Name 3 …” or something silly to do. Played in 5 seconds")}
               {ta("exposed", `${GAME_META.exposed.icon} Never have I ever…`, "Finish the sentence: “Never have I ever …”")}
               {ta("awards", "🏆 Villa Awards categories", "One award per line — voted live on phones, in this order")}

@@ -107,7 +107,7 @@ export function GameScreen({ id, data }: { id: GameKey; data: RoomData }) {
   const qrSmall = useVoteQr(data.code, 200);
   const runKey = `${state.introKey}-${idx}-${beat}`;
 
-  const header = id === "canceled" ? "MOST LIKELY TO…" : id === "exposed" ? "NEVER HAVE I EVER…" : null;
+  const header = id === "canceled" ? "WHO\u2019S MOST LIKELY TO…" : id === "exposed" ? "NEVER HAVE I EVER…" : null;
   return (
     <div className="stage-layer">
       <Sky dim={0.3} palms={false} sunX={960} tint={`radial-gradient(circle at 50% 45%, ${meta.hue}66, transparent 65%)`} />
