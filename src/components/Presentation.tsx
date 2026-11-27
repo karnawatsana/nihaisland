@@ -10,7 +10,7 @@ import { Poster } from "./Poster";
 import { CastReveal } from "./CastReveal";
 import { Bombshell } from "./Bombshell";
 import { RoundScreen } from "./rounds";
-import { FinaleScreen, HotSeatOverlay } from "./games";
+import { FinaleScreen, HotSeatOverlay, RoundIntro } from "./games";
 import { Sky } from "./Sky";
 
 function Standby({ code, demo }: { code: string; demo: boolean }) {
@@ -46,6 +46,7 @@ function Scene({ data, onEnter, setReveal }: { data: RoomData; onEnter: () => vo
     case "host": return poster.host ? <CastReveal islander={poster.host} index={1} total={1} introKey={state.introKey} badge="★ YOUR HOST ★" /> : <Standby code={data.code} demo={demo} />;
     case "cast": return <CastReveal islander={cast[step.index]} index={step.index} total={CAST_SIZE - 1} introKey={state.introKey} />;
     case "bombshell": return <Bombshell islander={cast[CAST_SIZE - 1]} introKey={state.introKey} fallbackPhoto={poster.portrait} onReveal={setReveal} />;
+    case "roundIntro": return <RoundIntro id={step.id} data={data} />;
     case "round": return <RoundScreen id={step.id} data={data} />;
     case "finale": return <FinaleScreen data={data} />;
   }

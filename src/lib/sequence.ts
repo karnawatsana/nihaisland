@@ -9,6 +9,7 @@ export type Step =
   | { kind: "standby" } | { kind: "poster" } | { kind: "host" }
   | { kind: "cast"; index: number }
   | { kind: "bombshell" }
+  | { kind: "roundIntro"; id: RoundId }
   | { kind: "round"; id: RoundId }
   | { kind: "finale" };
 
@@ -29,7 +30,7 @@ export const STEPS: Step[] = [
   { kind: "host" },
   ...Array.from({ length: CAST_SIZE - 1 }, (_, i) => ({ kind: "cast", index: i }) as Step),
   { kind: "bombshell" },
-  ...ROUNDS.map((r) => ({ kind: "round", id: r.id }) as Step),
+  ...ROUNDS.flatMap((r) => [{ kind: "roundIntro", id: r.id }, { kind: "round", id: r.id }] as Step[]),
   { kind: "finale" },
 ];
 
@@ -52,7 +53,12 @@ export function stepLabel(step: number, cast: Islander[], hostName?: string): st
     case "host": return `Host intro · ${hostName ?? ""}`;
     case "cast": return `Islander ${s.index + 1}/${CAST_SIZE - 1} · ${cast[s.index]?.firstName ?? ""}`;
     case "bombshell": return `Birthday Bombshell · ${cast[CAST_SIZE - 1]?.firstName ?? ""}`;
+    case "roundIntro": { const r = ROUNDS.find((x) => x.id === s.id)!; return `Round ${r.n} intro · ${r.title}`; }
     case "round": { const r = ROUNDS.find((x) => x.id === s.id)!; return `Round ${r.n} · ${r.title}`; }
     case "finale": return "Birthday finale 🎂";
   }
 }
+
+/** Step index of a round's intro / game screen. */
+export const introStep = (id: RoundId) => STEPS.findIndex((s) => s.kind === "roundIntro" && s.id === id);
+export const gameStep = (id: RoundId) => STEPS.findIndex((s) => s.kind === "round" && s.id === id);

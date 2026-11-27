@@ -1,4 +1,4 @@
-import type { Decks } from "./types";
+import type { Decks, GameKey } from "./types";
 
 /** Starter content: generic, silly and safe. Edit everything in /setup → Games (add real receipts there!). */
 export const defaultDecks = (): Decks => ({
@@ -66,3 +66,47 @@ export const GAME_META = {
   redflag: { icon: "🚩", title: "Red Flag or Just a Personality?", hue: "#ff5a3c", word: "VOTE!", labels: ["Start vote", "Show verdict", "Next card"] },
   exposed: { icon: "🤫", title: "Never Have I Ever: Exposed", hue: "#ffb02e", word: "FINGERS DOWN!", labels: ["Fingers down!", "Show the damage", "Next card"] },
 } as const;
+
+/** Text for each round's intro screen: what it is and how to play. `pv` = phone voting is on. */
+export const GAME_INTRO: Record<GameKey, { tagline: string; what: string; how: (pv: boolean) => string[] }> = {
+  receipts: {
+    tagline: "The group has opinions. We brought receipts.",
+    what: "A question about the group is printed on a receipt. Everyone decides who it describes best, and the most-picked person gets the receipt stamped. No hiding.",
+    how: (pv) => [
+      "A question appears on a receipt on the TV.",
+      pv ? "When the host opens voting, pick who it fits best on your phone." : "When the host says go, everyone points at who it fits on 3-2-1.",
+      "You can't pick yourself. Be honest. Be dramatic.",
+      "The most-picked person gets the receipt. Defend yourself out loud!",
+    ],
+  },
+  canceled: {
+    tagline: "Vote. Regret. Repeat.",
+    what: "Each card finishes the sentence “Most likely to get canceled for…”. You decide who in the villa is most likely, and the winner gets officially canceled.",
+    how: (pv) => [
+      "A “most likely to get canceled for…” card appears.",
+      pv ? "Vote for who's most likely on your phone." : "On 3-2-1, everyone points at who's most likely.",
+      "The person with the most votes is stamped CANCELED.",
+      "Tied votes? Everyone tied gets canceled. Appeals are not accepted.",
+    ],
+  },
+  redflag: {
+    tagline: "Defend your choices.",
+    what: "Each card describes a habit or quirk. Is it a genuine red flag, or just a personality? The villa votes and the majority decides.",
+    how: (pv) => [
+      "A habit or quirk appears on the TV.",
+      pv ? "Vote 🚩 Red flag or ✅ Just a personality on your phone." : "Everyone calls it out loud: 🚩 red flag, or ✅ personality.",
+      "The majority wins. A tie means a hung jury.",
+      "Argue your case: someone here definitely does this.",
+    ],
+  },
+  exposed: {
+    tagline: "Fingers down. Truth up.",
+    what: "A “Never have I ever…” statement appears. If you HAVE done it, you're exposed. The TV counts who put a finger down.",
+    how: (pv) => [
+      "A “Never have I ever…” card appears.",
+      pv ? "Tap 👇 I have… if it's true for you, or ✋ Never if it's not." : "If you've done it, put a finger down. Everyone's watching.",
+      "The TV shows who got exposed and keeps score all game.",
+      "Lying is allowed. Getting caught is encouraged.",
+    ],
+  },
+};

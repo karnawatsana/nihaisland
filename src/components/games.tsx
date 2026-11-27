@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import type { RoomData } from "@/lib/useRoom";
 import type { GameKey, Islander } from "@/lib/types";
-import { GAME_META } from "@/lib/decks";
+import { GAME_INTRO, GAME_META } from "@/lib/decks";
 import { CAST_SIZE, ROUNDS } from "@/lib/sequence";
 import { rng } from "@/lib/rng";
 import { Sky, Sparkles } from "./Sky";
@@ -252,3 +252,43 @@ function topOf(m: Record<string, number[]>, cast: Islander[]): string | null {
   return `${top.join(" & ")} (${e[0][1]}×)`;
 }
 export { sum as _sum };
+
+/** Shown before each game: what it is and how to play. */
+export function RoundIntro({ id, data }: { id: GameKey; data: RoomData }) {
+  const meta = GAME_META[id]; const info = GAME_INTRO[id];
+  const n = ROUNDS.find((r) => r.id === id)!.n; const pv = data.state.pv;
+  const qr = useVoteQr(data.code, 240);
+  return (
+    <div className="stage-layer" key={data.state.introKey}>
+      <Sky dim={0.3} palms={false} sunX={960} tint={`radial-gradient(circle at 30% 45%, ${meta.hue}77, transparent 62%)`} />
+      <div style={{ position: "absolute", left: 100, top: 90, width: 900 }}>
+        <motion.div initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", alignItems: "center", gap: 24 }}>
+          <span className="glass" style={{ borderRadius: 99, padding: "8px 30px", fontSize: 28, fontWeight: 700, letterSpacing: "0.3em", background: "rgba(3,40,66,.55)" }}>ROUND {n} OF {ROUNDS.length}</span>
+          <span style={{ fontSize: 28, fontWeight: 700, letterSpacing: "0.4em", textShadow: "0 2px 12px rgba(0,50,80,.7)" }}>NIHA ISLAND</span>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, scale: 0.4, rotate: -14 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} transition={{ delay: 0.3, type: "spring", bounce: 0.5, duration: 1 }} style={{ fontSize: 150, marginTop: 24, lineHeight: 1, filter: "drop-shadow(0 12px 30px rgba(0,30,50,.5))" }}>{meta.icon}</motion.div>
+        <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 1, ease: [0.16, 1, 0.3, 1] }} className="title-pink" style={{ fontSize: 112, fontWeight: 800, lineHeight: 0.95, letterSpacing: "-0.04em", marginTop: 10 }}>{meta.title.toLowerCase()}</motion.div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.0, duration: 0.9 }} className="font-serif" style={{ marginTop: 24, fontSize: 54, fontStyle: "italic", fontWeight: 700, color: "#ffe39a", textShadow: "0 4px 20px rgba(100,40,0,.6)" }}>{info.tagline}</motion.div>
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.3, duration: 0.9 }} style={{ marginTop: 26, fontSize: 36, lineHeight: 1.35, fontWeight: 500, textShadow: "0 2px 14px rgba(0,40,70,.8)" }}>{info.what}</motion.p>
+      </div>
+      <motion.div initial={{ opacity: 0, x: 80 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.6, duration: 0.9, ease: [0.16, 1, 0.3, 1] }} className="glass" style={{ position: "absolute", right: 90, top: 100, width: 720, borderRadius: 44, padding: "40px 46px", background: "rgba(3,40,66,.62)", borderColor: `${meta.hue}cc`, boxShadow: `0 0 70px ${meta.hue}55` }}>
+        <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: "0.4em", color: "#ffe39a" }}>HOW TO PLAY</div>
+        <div style={{ marginTop: 26, display: "flex", flexDirection: "column", gap: 26 }}>
+          {info.how(pv).map((line, i) => (
+            <motion.div key={i} initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 1.1 + i * 0.35, duration: 0.7 }} style={{ display: "flex", gap: 22, alignItems: "flex-start" }}>
+              <div style={{ flex: "none", width: 58, height: 58, borderRadius: 99, background: meta.hue, display: "grid", placeItems: "center", fontSize: 32, fontWeight: 800, boxShadow: "0 6px 16px rgba(0,0,0,.35)" }}>{i + 1}</div>
+              <div style={{ fontSize: 35, fontWeight: 600, lineHeight: 1.25, paddingTop: 2 }}>{line}</div>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+      {pv && qr && (
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2.6, duration: 0.8 }} className="glass" style={{ position: "absolute", right: 90, bottom: 56, borderRadius: 32, padding: "16px 30px 16px 16px", display: "flex", alignItems: "center", gap: 26, background: "rgba(3,40,66,.7)" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={qr} width={150} height={150} alt="Scan to join voting" style={{ background: "#fff", padding: 8, borderRadius: 18 }} />
+          <div style={{ fontSize: 32, fontWeight: 700, lineHeight: 1.25, width: 360 }}>📱 Scan now &amp; pick who you are — voting happens on your phone</div>
+        </motion.div>
+      )}
+    </div>
+  );
+}

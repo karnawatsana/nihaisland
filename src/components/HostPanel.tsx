@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRoom, type Status } from "@/lib/useRoom";
-import { CAST_SIZE, ROUNDS, STEP, STEPS, stepLabel } from "@/lib/sequence";
+import { CAST_SIZE, ROUNDS, STEP, STEPS, introStep, stepLabel } from "@/lib/sequence";
 import { GAME_META } from "@/lib/decks";
 import type { Command } from "@/lib/types";
 
@@ -40,6 +40,16 @@ export function HostPanel({ code, onLogout, compact = false }: { code: string; o
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/15"><div className="h-full rounded-full bg-gradient-to-r from-hot to-gold transition-all" style={{ width: `${pct}%` }} /></div>
         <div className="mt-1 text-right text-xs text-white/70">Step {state.step + 1} / {STEPS.length}</div>
       </div>
+
+      {step.kind === "roundIntro" && (
+        <div className="mt-4 rounded-3xl border border-white/30 bg-[#04283e]/60 p-4 backdrop-blur" data-testid="intro-panel">
+          <div className="text-[11px] font-semibold uppercase tracking-[.25em] text-gold">{GAME_META[step.id].icon} Intro · explain the rules</div>
+          <p className="mt-2 text-sm text-white/90">The TV is showing how this round works. Read it out, then start the game.</p>
+          <button onClick={() => { buzz(); run({ type: "pv", on: !state.pv }); }} className={`mt-3 w-full rounded-xl py-2.5 text-sm font-extrabold ${state.pv ? "bg-emerald-500" : "bg-white/20"}`}>📱 Phone voting: {state.pv ? "ON" : "OFF"}</button>
+          {state.pv && <p className="mt-2 text-xs text-white/80">The QR is on the TV — let everyone scan &amp; pick their name <b>before</b> you start.</p>}
+          <button onClick={() => { buzz(); run({ type: "next" }); }} className="mt-3 w-full rounded-2xl bg-gradient-to-br from-hot to-[#d4106f] py-5 text-lg font-extrabold shadow-lg shadow-hot/40 active:scale-[.97]">START THE GAME ▶</button>
+        </div>
+      )}
 
       {step.kind === "round" && (() => {
         const id = step.id; const meta = GAME_META[id];
@@ -140,7 +150,7 @@ export function HostPanel({ code, onLogout, compact = false }: { code: string; o
         <div className="mt-4 text-[11px] font-semibold uppercase tracking-[.25em] text-white/70">Rounds</div>
         <div className="mt-2 grid gap-2">
           {ROUNDS.map((r, i) => (
-            <button key={r.id} onClick={() => { buzz(); run({ type: "goto", step: STEP.bombshell + 1 + i }); }} className={`rounded-xl px-3 py-2 text-left text-sm font-semibold ${state.step === STEP.bombshell + 1 + i ? "bg-hot" : "bg-white/15"}`}>{r.icon} {r.n}. {r.title}</button>
+            <button key={r.id} onClick={() => { buzz(); run({ type: "goto", step: introStep(r.id) }); }} className={`rounded-xl px-3 py-2 text-left text-sm font-semibold ${(step.kind === "roundIntro" || step.kind === "round") && step.id === r.id ? "bg-hot" : "bg-white/15"}`}>{r.icon} {r.n}. {r.title}</button>
           ))}
           <button onClick={() => run({ type: "goto", step: STEP.lastStep })} className={`rounded-xl px-3 py-2 text-left text-sm font-semibold ${step.kind === "finale" ? "bg-hot" : "bg-white/15"}`}>🎂 Birthday finale</button>
         </div>
