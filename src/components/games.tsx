@@ -246,6 +246,7 @@ function Fireworks() {
 
 export function FinaleScreen({ data }: { data: RoomData }) {
   const { state, cast } = data; const stage = state.finale;
+  if (stage === 2) return <AwardsScreen data={data} />;
   const niha = cast[CAST_SIZE - 1];
   const nihaName = niha.firstName.replace(/[\[\]]/g, "");
   const canceledTop = topOf(state.res.canceled, cast);
@@ -266,16 +267,6 @@ export function FinaleScreen({ data }: { data: RoomData }) {
           <div className="gold-text" style={{ fontSize: stage ? 150 : 150, fontWeight: 800, lineHeight: 0.95, letterSpacing: "-0.04em", marginTop: 10 }}>{stage ? "happy birthday" : "make a wish"}</div>
           <div className="title-pink" style={{ fontSize: stage ? 215 : 260, fontWeight: 800, lineHeight: 0.95, letterSpacing: "-0.05em", marginTop: stage ? 0 : 18 }}>{nihaName.toLowerCase()}</div>
         </motion.div>
-        {stage === 1 && (canceledTop || exposedTop || reds > 0 || liar || detective) && (
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.8, duration: 1 }} className="glass" style={{ marginTop: 24, borderRadius: 32, padding: "20px 36px", background: "rgba(3,40,66,.55)", fontSize: 32, fontWeight: 600, lineHeight: 1.45 }}>
-            <div style={{ fontSize: 26, letterSpacing: "0.4em", color: "#ffe39a", fontWeight: 700 }}>VILLA AWARDS</div>
-            {liar && <div>😈 Best liar: <b>{liar}</b> fooled</div>}
-            {detective && <div>🕵️ Sharpest detective: <b>{detective}</b> caught</div>}
-            {canceledTop && <div>🚫 Most canceled: <b>{canceledTop}</b></div>}
-            {exposedTop && <div>🤫 Most exposed: <b>{exposedTop}</b></div>}
-            {reds > 0 && <div>🚩 Red flags called tonight: <b>{reds}</b></div>}
-          </motion.div>
-        )}
       </div>
     </div>
   );
@@ -326,6 +317,51 @@ export function RoundIntro({ id, data }: { id: GameKey; data: RoomData }) {
           <div style={{ fontSize: 32, fontWeight: 700, lineHeight: 1.25, width: 360 }}>{collect ? <>📱 Scan &amp; send your <b>1 true + 1 fake</b><div style={{ marginTop: 10, fontSize: 40, fontWeight: 800, color: "#ffe39a" }}>{have} / {need} sent</div></> : <>📱 Scan now &amp; pick who you are — voting happens on your phone</>}</div>
         </motion.div>
       )}
+    </div>
+  );
+}
+
+interface Award { icon: string; title: string; who: Islander[]; note: string }
+function awardsOf(data: RoomData): Award[] {
+  const { state, cast } = data; const people = peopleOf(data); const out: Award[] = [];
+  const top = (m: Record<number, number>, pool: Islander[]): { who: Islander[]; n: number } | null => {
+    const e = Object.entries(m).filter(([k]) => pool[+k]).sort((a, b) => b[1] - a[1]); if (!e.length || e[0][1] <= 0) return null;
+    return { who: e.filter((x) => x[1] === e[0][1]).map((x) => pool[+x[0]]), n: e[0][1] };
+  };
+  const count = (res: Record<string, number[]>) => { const t: Record<number, number> = {}; Object.values(res).forEach((v) => v.forEach((w) => (t[w] = (t[w] ?? 0) + 1))); return t; };
+  const rs = receiptStats(state);
+  const liar = top(rs.fooled, people); if (liar) out.push({ icon: "😈", title: "Best Liar", who: liar.who, note: `fooled ${liar.n} ${liar.n === 1 ? "person" : "people"}` });
+  const det = top(rs.caught, people); if (det) out.push({ icon: "🕵️", title: "Sharpest Detective", who: det.who, note: `caught ${det.n} ${det.n === 1 ? "fake" : "fakes"}` });
+  const can = top(count(state.res.canceled), cast); if (can) out.push({ icon: "🚫", title: "Most Canceled", who: can.who, note: `canceled ${can.n}×` });
+  const exp = top(count(state.res.exposed), cast); if (exp) out.push({ icon: "🤫", title: "Most Exposed", who: exp.who, note: `${exp.n} fingers down` });
+  const reds = Object.values(state.res.redflag).filter((v) => v === "red").length;
+  if (reds) out.push({ icon: "🚩", title: "Red Flags Called", who: [], note: `${reds} tonight` });
+  out.push({ icon: "👑", title: "Birthday Queen", who: [cast[CAST_SIZE - 1]], note: "the main event" });
+  return out;
+}
+
+function AwardsScreen({ data }: { data: RoomData }) {
+  const awards = awardsOf(data);
+  return (
+    <div className="stage-layer" key={`aw${data.state.introKey}`}>
+      <Sky dim={0.18} palms={false} sunX={960} tint="radial-gradient(circle at 50% 30%, rgba(255,210,122,.5), transparent 65%)" />
+      <Sparkles count={50} seed={61} /><Confetti />
+      <div style={{ position: "absolute", left: 0, right: 0, top: 60, textAlign: "center" }}>
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} style={{ fontSize: 30, fontWeight: 700, letterSpacing: "0.6em", textShadow: "0 2px 14px rgba(0,50,80,.7)" }}>NIHA ISLAND</motion.div>
+        <motion.div initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2, duration: 0.9, ease: [0.16, 1, 0.3, 1] }} className="gold-text" style={{ fontSize: 150, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1, marginTop: 6 }}>villa awards</motion.div>
+      </div>
+      <div style={{ position: "absolute", left: 110, right: 110, top: 300, display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 36 }}>
+        {awards.map((a, i) => (
+          <motion.div key={a.title} initial={{ opacity: 0, y: 70, scale: 0.85 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: 1 + i * 0.9, duration: 0.9, type: "spring", bounce: 0.35 }} className="glass"
+            style={{ width: awards.length > 4 ? 540 : 700, borderRadius: 40, padding: "28px 34px", background: "rgba(3,40,66,.62)", borderColor: "rgba(255,226,150,.7)", boxShadow: "0 0 60px rgba(255,200,100,.35)" }}>
+            <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: "0.2em", color: "#ffe39a" }}>{a.icon} {a.title.toUpperCase()}</div>
+            <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 20 }}>
+              <div style={{ display: "flex" }}>{a.who.slice(0, 3).map((w, k) => <div key={w.id} style={{ marginLeft: k ? -26 : 0 }}><Avatar c={w} size={100} ring /></div>)}{!a.who.length && <div style={{ fontSize: 80 }}>{a.icon}</div>}</div>
+              <div><div style={{ fontSize: a.who.length > 1 ? 40 : 54, fontWeight: 800, lineHeight: 1.05 }}>{a.who.map(nm).join(" & ") || "The villa"}</div><div style={{ marginTop: 6, fontSize: 30, fontWeight: 600, opacity: 0.9 }}>{a.note}</div></div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
     </div>
   );
 }

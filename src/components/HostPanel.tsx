@@ -103,9 +103,13 @@ export function HostPanel({ code, onLogout, compact = false }: { code: string; o
       })()}
 
       {step.kind === "finale" && (
-        <div className="mt-4 grid grid-cols-2 gap-3 rounded-3xl border border-white/30 bg-[#04283e]/60 p-4 backdrop-blur" data-testid="finale-panel">
-          <Btn onClick={() => run({ type: "finale", stage: 0 })} className={state.finale === 0 ? "bg-amber-400 text-black" : "bg-white/15 ring-1 ring-white/30"}>🕯 Candles lit</Btn>
-          <Btn onClick={() => run({ type: "finale", stage: 1 })} className="bg-gradient-to-br from-hot to-[#d4106f]">🌬 Blow them out!</Btn>
+        <div className="mt-4 rounded-3xl border border-white/30 bg-[#04283e]/60 p-4 backdrop-blur" data-testid="finale-panel">
+          <div className="text-[11px] font-semibold uppercase tracking-[.25em] text-gold">🎂 Finale · tap in order</div>
+          <div className="mt-3 grid gap-3">
+            <Btn onClick={() => run({ type: "finale", stage: 0 })} className={state.finale === 0 ? "bg-amber-400 text-black" : "bg-white/15 ring-1 ring-white/30"}>1 · 🕯 Candles lit (make a wish)</Btn>
+            <Btn onClick={() => run({ type: "finale", stage: 1 })} className={state.finale === 1 ? "bg-amber-400 text-black" : "bg-gradient-to-br from-hot to-[#d4106f]"}>2 · 🌬 Blow them out! (Happy Birthday)</Btn>
+            <Btn onClick={() => run({ type: "finale", stage: 2 })} className={state.finale === 2 ? "bg-amber-400 text-black" : "bg-gradient-to-br from-[#ffb02e] to-[#ff7a2e]"}>3 · 🏆 Villa Awards</Btn>
+          </div>
         </div>
       )}
 

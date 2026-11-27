@@ -90,7 +90,7 @@ export function Presentation({ code, contained = false }: { code: string; contai
       if (k === "round" && s.beat !== p.beat) { if (s.beat === 1) sfx.countdown(); else if (s.beat === 2) sfx.stamp(); }
       if (k === "round" && s.card !== p.card) sfx.whoosh();
       if (s.hot.on && s.hot.key !== p.hot) sfx.siren();
-      if (k === "finale" && s.finale !== p.fin && s.finale === 1) sfx.fanfare();
+      if (k === "finale" && s.finale !== p.fin) { if (s.finale === 1) sfx.fanfare(); else if (s.finale === 2) sfx.chime(); }
     }
     snap.current = { card: s.card, beat: s.beat, hot: s.hot.on ? s.hot.key : p.hot === -1 ? 0 : p.hot, fin: s.finale };
   }, [data?.state.card, data?.state.beat, data?.state.hot.key, data?.state.hot.on, data?.state.finale, data?.state.step]); // eslint-disable-line react-hooks/exhaustive-deps

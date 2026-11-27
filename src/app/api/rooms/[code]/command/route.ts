@@ -25,7 +25,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ code: s
   if (cmd.type === "mark" && !isIdx(cmd.who)) return json({ error: "Bad islander" }, 400);
   if (cmd.type === "hotStart" && (!isIdx(cmd.who) || !Number.isInteger(cmd.q) || cmd.q < 0)) return json({ error: "Bad hot seat" }, 400);
   if (cmd.type === "verdict" && cmd.v !== "red" && cmd.v !== "ok") return json({ error: "Bad verdict" }, 400);
-  if (cmd.type === "finale" && cmd.stage !== 0 && cmd.stage !== 1) return json({ error: "Bad stage" }, 400);
+  if (cmd.type === "finale" && ![0, 1, 2].includes(cmd.stage)) return json({ error: "Bad stage" }, 400);
   const r = await updateRoom(code, (rec) => {
     const d = rec.poster.decks ?? defaultDecks();
     const authors = authorsOf((rec.state.subs ?? {}) as never);
