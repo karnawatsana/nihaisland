@@ -1,4 +1,4 @@
-import { getRoom, updateRoom } from "@/server/store";
+import { getRoomLight, updateRoom } from "@/server/store";
 import { isHost, json, normCode, toView } from "@/server/view";
 import { norm, reduce } from "@/lib/reducer";
 import { authorsOf } from "@/lib/receipts";
@@ -10,7 +10,7 @@ const TYPES = ["next","prev","goto","openPoster","replayOpening","startCast","bo
 
 export async function POST(req: Request, { params }: { params: Promise<{ code: string }> }) {
   const code = normCode((await params).code);
-  const r0 = await getRoom(code);
+  const r0 = await getRoomLight(code);
   if (!r0) return json({ error: "Room not found" }, 404);
   const cmd = (await req.json().catch(() => null)) as Command | null;
   if (!cmd || !TYPES.includes(cmd.type)) return json({ error: "Bad command" }, 400);
@@ -34,6 +34,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ code: s
     const state = reduce(rec.state, cmd, Date.now(), ctx);
     if (JSON.stringify(state) === JSON.stringify(norm(rec.state))) return null;
     return { ...rec, state, version: rec.version + 1 };
-  });
+  }, { light: true });
   return json(toView(r!, Number(new URL(req.url).searchParams.get("cv") ?? -1)));
 }

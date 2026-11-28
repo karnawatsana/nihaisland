@@ -7,6 +7,7 @@ export interface RoomRecord {
   version: number; contentVersion: number;
   state: PresState; cast: Islander[]; poster: PosterConfig;
   updatedAt: number;
+  light?: boolean; // loaded without the heavy photo columns (cast is [] and poster only has decks)
 }
 
 const g = globalThis as unknown as { __nihaRooms?: Map<string, RoomRecord>; __nihaBus?: EventEmitter; __nihaSb?: SupabaseClient };
@@ -37,6 +38,22 @@ export async function getRoom(code: string): Promise<RoomRecord | null> {
   return data ? fromRow(data) : null;
 }
 
+const LIGHT_COLS = "code,demo,pin_hash,salt,version,content_version,state,updated_at,decks:poster->decks";
+const lightCache = new Map<string, { t: number; r: RoomRecord }>();
+/** Small read: everything except photos. Used by polling, commands and login. Cached ~700 ms to absorb many phones. */
+export async function getRoomLight(code: string, maxAgeMs = 0): Promise<RoomRecord | null> {
+  if (mode === "memory") return rooms.get(code) ?? null;
+  const hit = lightCache.get(code);
+  if (hit && Date.now() - hit.t < maxAgeMs) return hit.r;
+  const { data, error } = await sb().from("rooms").select(LIGHT_COLS).eq("code", code).maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  const d = data as any;
+  const r: RoomRecord = { ...fromRow({ ...d, cast_list: [], poster: {} }), cast: [], poster: { decks: d.decks ?? undefined } as never, light: true };
+  lightCache.set(code, { t: Date.now(), r });
+  return r;
+}
+
 export async function createRoom(r: RoomRecord) {
   if (mode === "memory") {
     if (rooms.size > 300) { // evict oldest
@@ -51,10 +68,10 @@ export async function createRoom(r: RoomRecord) {
 }
 
 /** Optimistic-concurrency update: `mutate` is re-run on the fresh record if someone else wrote first. */
-export async function updateRoom(code: string, mutate: (r: RoomRecord) => RoomRecord | null): Promise<RoomRecord | null> {
+export async function updateRoom(code: string, mutate: (r: RoomRecord) => RoomRecord | null, opts: { light?: boolean } = {}): Promise<RoomRecord | null> {
   for (let attempt = 0; attempt < 10; attempt++) {
     if (attempt) await new Promise((r) => setTimeout(r, 25 + Math.random() * 90));
-    const cur = await getRoom(code);
+    const cur = opts.light ? await getRoomLight(code) : await getRoom(code);
     if (!cur) return null;
     const next = mutate(structuredClone(cur));
     if (!next) return cur;
@@ -64,9 +81,10 @@ export async function updateRoom(code: string, mutate: (r: RoomRecord) => RoomRe
       bus.emit(code, next.version);
       return next;
     }
-    const { data, error } = await sb().from("rooms").update(toRow(next)).eq("code", code).eq("version", cur.version).select("code");
+    const patch = opts.light ? { version: next.version, state: next.state, updated_at: new Date(next.updatedAt).toISOString() } : toRow(next);
+    const { data, error } = await sb().from("rooms").update(patch).eq("code", code).eq("version", cur.version).select("code");
     if (error) throw new Error(error.message);
-    if (data && data.length) { await broadcast(code, next.version); return next; }
+    if (data && data.length) { lightCache.delete(code); await broadcast(code, next.version); return next; }
   }
   throw new Error("Could not save (conflict). Try again.");
 }

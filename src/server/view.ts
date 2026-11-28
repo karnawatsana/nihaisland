@@ -13,7 +13,7 @@ export function toView(r: RoomRecord, knownContent = -1): RoomView {
   return {
     code: r.code, demo: r.demo, version: r.version, contentVersion: r.contentVersion,
     state: publicState(r.state), serverTime: Date.now(),
-    ...(knownContent !== r.contentVersion ? { cast: r.cast, poster: r.poster } : {}),
+    ...(knownContent !== r.contentVersion && !r.light ? { cast: r.cast, poster: r.poster } : {}),
   };
 }
 export function isHost(req: Request, r: RoomRecord): boolean {

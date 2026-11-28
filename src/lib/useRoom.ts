@@ -26,6 +26,7 @@ export function useRoom(code: string | null) {
   const [data, setData] = useState<RoomData | null>(null);
   const [status, setStatus] = useState<Status>("connecting");
   const [push, setPush] = useState(false);
+  const pushOn = useRef(false);
   const ref = useRef<{ cv: number; v: number; data: RoomData | null }>({ cv: -1, v: -1, data: null });
 
   const apply = useCallback((v: RoomView) => {
@@ -55,7 +56,9 @@ export function useRoom(code: string | null) {
     ref.current = { cv: -1, v: -1, data: null };
     setData(null); setStatus("connecting");
     refresh();
-    const poll = setInterval(refresh, 2500);
+    let timer: ReturnType<typeof setTimeout>; let stopped = false;
+    const tick = () => { if (stopped) return; refresh(); timer = setTimeout(tick, pushOn.current ? 9000 : 3000); }; // push is live → poll rarely
+    timer = setTimeout(tick, 3000);
     const onVis = () => document.visibilityState === "visible" && refresh();
     document.addEventListener("visibilitychange", onVis);
     window.addEventListener("online", refresh);
@@ -64,16 +67,16 @@ export function useRoom(code: string | null) {
       const sb = getSb();
       const ch = sb.channel(`niha-room-${code}`)
         .on("broadcast", { event: "ping" }, () => refresh())
-        .subscribe((s) => { setPush(s === "SUBSCRIBED"); if (s === "SUBSCRIBED") refresh(); });
+        .subscribe((s) => { pushOn.current = s === "SUBSCRIBED"; setPush(s === "SUBSCRIBED"); if (s === "SUBSCRIBED") refresh(); });
       cleanup = () => { sb.removeChannel(ch); };
     } else {
       const es = new EventSource(`/api/rooms/${code}/stream`);
-      es.onopen = () => setPush(true);
+      es.onopen = () => { pushOn.current = true; setPush(true); };
       es.onmessage = () => refresh();
-      es.onerror = () => setPush(false);
+      es.onerror = () => { pushOn.current = false; setPush(false); };
       cleanup = () => es.close();
     }
-    return () => { clearInterval(poll); document.removeEventListener("visibilitychange", onVis); window.removeEventListener("online", refresh); cleanup(); setPush(false); };
+    return () => { stopped = true; clearTimeout(timer); document.removeEventListener("visibilitychange", onVis); window.removeEventListener("online", refresh); cleanup(); setPush(false); };
   }, [code, refresh]);
 
   const send = useCallback(async (cmd: Command): Promise<string | null> => {
