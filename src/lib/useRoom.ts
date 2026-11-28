@@ -57,7 +57,7 @@ export function useRoom(code: string | null) {
     setData(null); setStatus("connecting");
     refresh();
     let timer: ReturnType<typeof setTimeout>; let stopped = false;
-    const tick = () => { if (stopped) return; refresh(); timer = setTimeout(tick, pushOn.current ? 9000 : 3000); }; // push is live → poll rarely
+    const tick = () => { if (stopped) return; refresh(); timer = setTimeout(tick, pushOn.current ? 5000 : 2500); }; // push is live → poll rarely
     timer = setTimeout(tick, 3000);
     const onVis = () => document.visibilityState === "visible" && refresh();
     document.addEventListener("visibilitychange", onVis);
